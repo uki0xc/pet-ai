@@ -165,13 +165,18 @@ function drawFrame(timestamp) {
   ctx.fill();
   ctx.restore();
 
-  // Calculate inner crop margins to eliminate bleed from neighboring frames
-  const marginX = 20;
-  const marginY = 25;
+  // Calculate asymmetric crop margins:
+  // - Top margin cuts off paw/bowl bleed from the row above
+  // - Bottom margin is minimal to preserve the complete bowl base
+  // - Left/Right margins are small to avoid trimming fluffy fur
+  const marginTop = 30;
+  const marginBottom = 2;
+  const marginX = 12;
+
   const sw = sheet.frameWidth - marginX * 2;
-  const sh = sheet.frameHeight - marginY * 2;
+  const sh = sheet.frameHeight - marginTop - marginBottom;
   const actualSx = sx + marginX;
-  const actualSy = sy + marginY;
+  const actualSy = sy + marginTop;
 
   // Calculate draw dimensions preserving cropped aspect ratio
   const maxDrawSize = 170;
@@ -185,7 +190,9 @@ function drawFrame(timestamp) {
   }
 
   const offsetX = (CANVAS_SIZE - dw) / 2;
-  const offsetY = (CANVAS_SIZE - dh) / 2 - 8;
+  // Align the bottom of the drawn cat directly onto the floor shadow to eliminate floating
+  const shadowY = CANVAS_SIZE - 14;
+  const offsetY = shadowY - dh + 6;
 
   ctx.save();
   
