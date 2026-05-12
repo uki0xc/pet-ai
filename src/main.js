@@ -17,14 +17,18 @@ const GRID_COLS = 3;
 const GRID_ROWS = 4;
 
 const STATES = {
-  eat:   { src: '/assets/cat_eat.webp', type: 'webp',   label: '吃饭中~' },
-  sleep: { src: '/assets/cat_sleep.png', type: 'sprite', frames: 12, label: 'Zzz...' },
+  eat: { src: '/assets/cat_eat.png', frames: 12, label: '吃饭中~' },
+  sleep: { src: '/assets/cat_sleep.png', frames: 12, label: 'Zzz...' },
+  play: { src: '/assets/cat_play.png', frames: 1, label: '玩耍中~', single: true },
+  play2: { src: '/assets/cat_play2.png', frames: 1, label: '玩耍中~', single: true },
 };
 
 // Random messages for each state
 const MESSAGES = {
   eat: ['好吃！', '嗷呜嗷呜~', '还想再来一碗！', '🐟🐟🐟', '吃饱了~', '这个罐头不错！'],
   sleep: ['Zzz...', '做了个好梦...', '别吵...', '(˘ω˘)', '五分钟后叫我...'],
+  play: ['看我抓蝴蝶！', '冲呀~', '毛线球真好玩！', '扑击！', '喵喵拳！', '精力充沛喵！'],
+  play2: ['看我抓蝴蝶！', '冲呀~', '毛线球真好玩！', '扑击！', '喵喵拳！', '精力充沛喵！'],
   pet: ['好舒服喵~', '嘿嘿~', '还要还要！', '❤️', '呼噜呼噜~', '喵呜~'],
 };
 
@@ -32,7 +36,7 @@ const MESSAGES = {
 // State
 // ============================================================
 
-let currentState = '';
+let currentState = 'eat';
 let currentFrame = 0;
 let lastFrameTime = 0;
 
@@ -48,7 +52,6 @@ const canvas = document.getElementById('pet-canvas');
 const ctx = canvas.getContext('2d');
 
 // UI elements
-const petWebp = document.getElementById('pet-webp');
 const contextMenu = document.getElementById('context-menu');
 const statusBubble = document.getElementById('status-bubble');
 const statusText = document.getElementById('status-text');
@@ -59,16 +62,6 @@ const statusText = document.getElementById('status-text');
 
 function loadAllSprites() {
   for (const [state, config] of Object.entries(STATES)) {
-    if (config.type === 'webp') {
-      spritesLoaded++;
-      console.log(`✅ Configured WebP for ${state}`);
-      if (spritesLoaded === totalSprites) {
-        setState('eat');
-        requestAnimationFrame(gameLoop);
-      }
-      continue;
-    }
-
     const img = new Image();
     img.onload = () => {
       // Process image to remove pure white background via flood-fill
@@ -85,42 +78,41 @@ function loadAllSprites() {
 
       // Check if pixel is near-white background
       function isBg(idx) {
-        return data[idx] > 235 && data[idx+1] > 235 && data[idx+2] > 235 && data[idx+3] > 0;
+        return data[idx] > 235 && data[idx + 1] > 235 && data[idx + 2] > 235 && data[idx + 3] > 0;
       }
 
       // Flood fill from all edges
       const stack = [];
       const visited = new Uint8Array(width * height);
-      for(let x=0; x<width; x++) { stack.push([x, 0]); stack.push([x, height-1]); }
-      for(let y=0; y<height; y++) { stack.push([0, y]); stack.push([width-1, y]); }
+      for (let x = 0; x < width; x++) { stack.push([x, 0]); stack.push([x, height - 1]); }
+      for (let y = 0; y < height; y++) { stack.push([0, y]); stack.push([width - 1, y]); }
 
-      while(stack.length > 0) {
+      while (stack.length > 0) {
         const [x, y] = stack.pop();
         const i = y * width + x;
-        if(visited[i]) continue;
+        if (visited[i]) continue;
         visited[i] = 1;
 
         const pIdx = i * 4;
-        if(isBg(pIdx)) {
+        if (isBg(pIdx)) {
           data[pIdx + 3] = 0; // Set transparent
-          
-          if(x > 0) stack.push([x - 1, y]);
-          if(x < width - 1) stack.push([x + 1, y]);
-          if(y > 0) stack.push([x, y - 1]);
-          if(y < height - 1) stack.push([x, y + 1]);
+
+          if (x > 0) stack.push([x - 1, y]);
+          if (x < width - 1) stack.push([x + 1, y]);
+          if (y > 0) stack.push([x, y - 1]);
+          if (y < height - 1) stack.push([x, y + 1]);
         }
       }
       offCtx.putImageData(imgData, 0, 0);
 
       spriteSheets[state] = {
         img: offCanvas,
-        frameWidth: img.width / GRID_COLS,
-        frameHeight: img.height / GRID_ROWS,
+        frameWidth: config.single ? img.width : img.width / GRID_COLS,
+        frameHeight: config.single ? img.height : img.height / GRID_ROWS,
       };
       spritesLoaded++;
       console.log(`✅ Loaded ${state}`);
       if (spritesLoaded === totalSprites) {
-        setState('eat');
         requestAnimationFrame(gameLoop);
       }
     };
@@ -128,7 +120,6 @@ function loadAllSprites() {
       console.error(`Failed to load sprite for ${state}`, e);
       spritesLoaded++;
       if (spritesLoaded === totalSprites) {
-        setState('eat');
         requestAnimationFrame(gameLoop);
       }
     };
@@ -150,14 +141,6 @@ function getFrameCoords(frameIndex) {
 function drawFrame(timestamp) {
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-  const stateConfig = STATES[currentState];
-  if (!stateConfig) return;
-
-  if (stateConfig.type === 'webp') {
-    // 渲染独立 WebP 动图时无需绘制 Canvas 本体
-    return;
-  }
-
   const sheet = spriteSheets[currentState];
   if (!sheet) {
     drawFallbackPet(timestamp);
@@ -166,6 +149,7 @@ function drawFrame(timestamp) {
 
   // OPTION 2: 极致丝滑的高端 Live2D 呼吸流方案
   // 固定提取单张画质最完美、无重绘抖动的本体插画（第 0 帧）
+  // play 状态为单张整图，始终取第 0 帧
   const staticFrameIndex = 0;
   const { col, row } = getFrameCoords(staticFrameIndex);
   const sx = col * sheet.frameWidth;
@@ -205,7 +189,7 @@ function drawFrame(timestamp) {
   const offsetY = shadowY - dh + 6;
 
   ctx.save();
-  
+
   // Add a soft white glow so dark outlines and ZZZs stand out beautifully
   ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
   ctx.shadowBlur = 8;
@@ -227,6 +211,12 @@ function drawFrame(timestamp) {
     const munchY = 1 + Math.abs(Math.sin(timestamp / 120)) * 0.012; // 垂直微弹
     ctx.rotate(tilt);
     ctx.scale(1, munchY);
+  } else if (currentState === 'play' || currentState === 'play2') {
+    // 活泼可爱的玩耍左右摆动与扑击弹跳节奏
+    const playTilt = Math.sin(timestamp / 400) * 0.025; // 放慢摇摆周期，幅度稍减
+    const pounceY = 1 + Math.abs(Math.sin(timestamp / 350)) * 0.015; // 放慢弹跳节奏
+    ctx.rotate(playTilt);
+    ctx.scale(1, pounceY);
   }
 
   // 绘制单张高清图片（相对于新的基准原点）
@@ -235,7 +225,7 @@ function drawFrame(timestamp) {
     actualSx, actualSy, sw, sh,
     -dw / 2, -dh, dw, dh
   );
-  
+
   ctx.restore();
 
   // 睡觉状态下，额外生成优雅的高清动态 Zzz 粒子气泡飘动效果
@@ -246,15 +236,15 @@ function drawFrame(timestamp) {
     ctx.shadowBlur = 4;
     const loopDuration = 3500;
     const phase = (timestamp % loopDuration) / loopDuration;
-    
+
     for (let i = 0; i < 3; i++) {
       const pPhase = (phase + i * 0.33) % 1;
       const alpha = Math.sin(pPhase * Math.PI); // 淡入淡出
       ctx.globalAlpha = alpha * 0.7;
-      
+
       const zx = offsetX + dw * 0.6 + Math.sin(pPhase * Math.PI * 2) * 6 + i * 4;
       const zy = offsetY + dh * 0.45 - pPhase * 40;
-      
+
       ctx.font = i === 2 ? 'bold 15px sans-serif' : 'bold 11px sans-serif';
       ctx.fillText(i === 2 ? 'Z' : 'z', zx, zy);
     }
@@ -394,20 +384,12 @@ function gameLoop(timestamp) {
 // ============================================================
 
 function setState(newState) {
+  // play 状态统一走当前变体
+  if (newState === 'play') newState = currentPlayVariant;
   if (currentState === newState) return;
   currentState = newState;
   currentFrame = 0;
   lastFrameTime = 0;
-
-  const stateConfig = STATES[newState];
-  if (stateConfig && stateConfig.type === 'webp') {
-    petWebp.src = stateConfig.src;
-    petWebp.classList.remove('hidden');
-  } else {
-    petWebp.classList.add('hidden');
-    petWebp.src = '';
-  }
-
   showRandomMessage(newState);
 }
 
@@ -420,6 +402,61 @@ function showRandomMessage(state) {
 
 
 // ============================================================
+// Time-based State
+// ============================================================
+
+function getStateByTime() {
+  const hour = new Date().getHours();
+  if (hour >= 0 && hour < 7) return 'sleep';           // 深夜/凌晨 睡觉
+  if (hour >= 7 && hour < 9) return 'eat';             // 早饭时间
+  if (hour >= 9 && hour < 12) return 'play';           // 上午 玩耍
+  if (hour >= 12 && hour < 13) return 'eat';           // 午饭时间
+  if (hour >= 13 && hour < 18) return 'play';          // 下午 玩耍
+  if (hour >= 18 && hour < 19) return 'eat';           // 晚饭时间
+  if (hour >= 19 && hour < 22) return 'play';          // 晚上 玩耍
+  return 'sleep';                                       // 22点后 准备睡觉
+}
+
+function startTimeBasedBehavior() {
+  // 立即按当前时间设置状态
+  setState(getStateByTime());
+
+  // 每分钟检查一次时间，到整点时切换
+  setInterval(() => {
+    const now = new Date();
+    if (now.getMinutes() === 0) {
+      const timeState = getStateByTime();
+      // play/play2 都属于 play 类，不要覆盖轮换状态
+      const currentIsPlay = currentState === 'play' || currentState === 'play2';
+      const targetIsPlay = timeState === 'play';
+      if (!(currentIsPlay && targetIsPlay) && timeState !== currentState) {
+        setState(timeState);
+      }
+    }
+  }, 60 * 1000);
+}
+
+
+
+// ============================================================
+// Play variant rotation (every 10 minutes)
+// ============================================================
+
+// 当前 play 变体：'play' 或 'play2'
+let currentPlayVariant = 'play';
+
+function startPlayRotation() {
+  setInterval(() => {
+    // 切换变体
+    currentPlayVariant = currentPlayVariant === 'play' ? 'play2' : 'play';
+    // 如果当前正在 play 状态，立即切换到新变体
+    if (currentState === 'play' || currentState === 'play2') {
+      currentState = currentPlayVariant;
+    }
+  }, 30 * 1000); // 30 秒轮换一次
+}
+
+// ============================================================
 // Auto Behavior
 // ============================================================
 
@@ -430,12 +467,17 @@ function startAutoActions() {
 function scheduleNextAction() {
   const delay = 15000 + Math.random() * 30000;
   autoActionTimer = setTimeout(() => {
-    const actions = ['eat', 'sleep'];
-    // Filter out current state so it actually changes
-    const availableActions = actions.filter(a => a !== currentState);
-    const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
-    setState(randomAction);
-
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 7 || hour >= 22) {
+      setState('sleep');
+    } else {
+      // play/play2 视为同一类，随机时不重复切换同类
+      const currentBase = (currentState === 'play' || currentState === 'play2') ? 'play' : currentState;
+      const actions = ['eat', 'sleep', 'play'];
+      const availableActions = actions.filter(a => a !== currentBase);
+      const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
+      setState(randomAction);
+    }
     scheduleNextAction();
   }, delay);
 }
@@ -475,6 +517,9 @@ document.querySelectorAll('.menu-item').forEach(item => {
         break;
       case 'sleep':
         setState('sleep');
+        break;
+      case 'play':
+        setState('play');
         break;
       case 'pet':
         doPetting();
@@ -565,34 +610,33 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ============================================================
-// Cursor pass-through for transparent areas
-// ============================================================
-
-document.addEventListener('mousemove', async (e) => {
-  const cx = CANVAS_SIZE / 2;
-  const cy = CANVAS_SIZE / 2 - 10;
-  const dist = Math.sqrt((e.clientX - cx) ** 2 + (e.clientY - cy) ** 2);
-
-  const isOverPet = dist < 85;
-
-  if (!contextMenu.classList.contains('hidden')) return;
-
-  try {
-    await invoke('set_ignore_cursor', { ignore: !isOverPet });
-  } catch (err) {
-    // Ignore errors during rapid movement
-  }
+// 当窗口失去焦点（切换到其他页面或应用）时自动隐藏右键菜单
+window.addEventListener('blur', () => {
+  hideContextMenu();
 });
 
 // ============================================================
 // Initialization
 // ============================================================
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   console.log('🐱 Desktop Pet initializing... (Codex style fat orange cat!)');
   loadAllSprites();
+  startTimeBasedBehavior();
+  startPlayRotation();
   startAutoActions();
+
+  // 显式初始化透明窗口接收鼠标事件状态，确保 macOS 和 Windows 均可正常响应点击和拖拽。
+  // 彻底移除高频 mousemove 动态修改 ignore 状态的逻辑，避免在按住拖拽时底层窗口属性被不断重置中断。
+  try {
+    await invoke('set_ignore_cursor', { ignore: false });
+    // 同时监听原生窗口级别的焦点状态变化，确保跨平台绝对可靠
+    getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+      if (!focused) hideContextMenu();
+    });
+  } catch (e) {
+    console.error('Init cursor error:', e);
+  }
 
   setTimeout(() => {
     showBubble('你好呀~ 我是你的桌宠喵！🐱', 4000);
