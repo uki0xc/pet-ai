@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desktop Pet</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="pet-canvas" width="200" height="200"></canvas>
+    
+    <!-- Right-click context menu -->
+    <div id="context-menu" class="context-menu hidden">
+      <div class="menu-header">🐱 桌宠菜单</div>
+      <div class="menu-item" data-action="eat">🍗 吃饭</div>
+      <div class="menu-item" data-action="sleep">😴 睡觉</div>
+      <div class="menu-item" data-action="play">🎮 玩耍</div>
+      <div class="menu-divider"></div>
+      <div class="menu-item" data-action="pet">💖 摸摸头</div>
+      <div class="menu-divider"></div>
+      <div class="menu-item menu-item-danger" data-action="quit">❌ 退出</div>
+    </div>
+
+    <!-- Floating status bubble -->
+    <div id="status-bubble" class="status-bubble hidden">
+      <span id="status-text"></span>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

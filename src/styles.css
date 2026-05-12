@@ -1,0 +1,186 @@
+/* ============================================================
+   Desktop Pet - Styles
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#pet-canvas {
+  display: block;
+  width: 200px;
+  height: 200px;
+  background: transparent;
+  cursor: grab;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+#pet-canvas:active {
+  cursor: grabbing;
+}
+
+/* ============================================================
+   Context Menu
+   ============================================================ */
+
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 160px;
+  background: rgba(30, 30, 40, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 6px 0;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: menuSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.menu-header {
+  padding: 8px 14px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.menu-item {
+  padding: 7px 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.menu-item:hover {
+  background: rgba(99, 102, 241, 0.35);
+  color: #fff;
+}
+
+.menu-item-danger:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.menu-divider {
+  height: 1px;
+  margin: 4px 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   Status Bubble (speech bubble)
+   ============================================================ */
+
+.status-bubble {
+  position: fixed;
+  bottom: 170px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 40, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  white-space: nowrap;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: bubbleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 999;
+}
+
+.status-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: rgba(30, 30, 40, 0.88);
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(45deg);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.7) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) translateY(0);
+  }
+}
+
+/* ============================================================
+   Heart particles (for petting)
+   ============================================================ */
+
+.heart-particle {
+  position: fixed;
+  font-size: 18px;
+  pointer-events: none;
+  z-index: 998;
+  animation: heartFloat 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes heartFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-40px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-80px) scale(0.8);
+  }
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+
+.hidden {
+  display: none !important;
+}
