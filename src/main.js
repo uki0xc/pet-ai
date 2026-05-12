@@ -10,24 +10,21 @@ const { getCurrentWindow } = window.__TAURI__.window;
 // ============================================================
 
 const CANVAS_SIZE = 200;
-const FRAME_DURATION = 900; // ms per animation frame (slower, extremely cozy and continuous feel)
+const FRAME_DURATION = 200; // ms per animation frame (fast and fluid loop to eliminate slideshow stuttering feel)
 
 // Each sprite sheet is a 3x4 grid = 12 frames
 const GRID_COLS = 3;
 const GRID_ROWS = 4;
 
-// Pet states -> sprite sheets
 const STATES = {
   eat:   { src: '/assets/cat_eat.png',   frames: 12, label: '吃饭中~' },
   sleep: { src: '/assets/cat_sleep.png', frames: 12, label: 'Zzz...' },
-  play:  { src: '/assets/cat_play.png',  frames: 12, label: '玩耍中~' },
 };
 
 // Random messages for each state
 const MESSAGES = {
   eat: ['好吃！', '嗷呜嗷呜~', '还想再来一碗！', '🐟🐟🐟', '吃饱了~', '这个罐头不错！'],
   sleep: ['Zzz...', '做了个好梦...', '别吵...', '(˘ω˘)', '五分钟后叫我...'],
-  play: ['好开心！', '✨✨✨', '来抓我呀~', '耶！', '再来再来！'],
   pet: ['好舒服喵~', '嘿嘿~', '还要还要！', '❤️', '呼噜呼噜~', '喵呜~'],
 };
 
@@ -367,7 +364,7 @@ function startAutoActions() {
 function scheduleNextAction() {
   const delay = 15000 + Math.random() * 30000;
   autoActionTimer = setTimeout(() => {
-    const actions = ['eat', 'sleep', 'play'];
+    const actions = ['eat', 'sleep'];
     // Filter out current state so it actually changes
     const availableActions = actions.filter(a => a !== currentState);
     const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
@@ -412,9 +409,6 @@ document.querySelectorAll('.menu-item').forEach(item => {
         break;
       case 'sleep':
         setState('sleep');
-        break;
-      case 'play':
-        setState('play');
         break;
       case 'pet':
         doPetting();
