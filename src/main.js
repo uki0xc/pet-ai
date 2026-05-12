@@ -143,18 +143,14 @@ function drawFrame(timestamp) {
     return;
   }
 
-  // Update animation frame
-  if (timestamp - lastFrameTime > FRAME_DURATION) {
-    const stateConfig = STATES[currentState];
-    currentFrame = (currentFrame + 1) % stateConfig.frames;
-    lastFrameTime = timestamp;
-  }
-
-  const { col, row } = getFrameCoords(currentFrame);
+  // OPTION 2: 极致丝滑的高端 Live2D 呼吸流方案
+  // 固定提取单张画质最完美、无重绘抖动的本体插画（第 0 帧）
+  const staticFrameIndex = 0;
+  const { col, row } = getFrameCoords(staticFrameIndex);
   const sx = col * sheet.frameWidth;
   const sy = row * sheet.frameHeight;
 
-  // Draw subtle shadow
+  // Draw subtle stationary floor shadow
   ctx.save();
   ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
   ctx.beginPath();
@@ -162,10 +158,7 @@ function drawFrame(timestamp) {
   ctx.fill();
   ctx.restore();
 
-  // Calculate asymmetric crop margins:
-  // - Top margin cuts off paw/bowl bleed from the row above
-  // - Bottom margin is minimal to preserve the complete bowl base
-  // - Left/Right margins are small to avoid trimming fluffy fur
+  // Calculate asymmetric crop margins to ensure pure illustration edges
   const marginTop = 30;
   const marginBottom = 2;
   const marginX = 12;
@@ -187,23 +180,65 @@ function drawFrame(timestamp) {
   }
 
   const offsetX = (CANVAS_SIZE - dw) / 2;
-  // Align the bottom of the drawn cat directly onto the floor shadow to eliminate floating
   const shadowY = CANVAS_SIZE - 14;
   const offsetY = shadowY - dh + 6;
 
   ctx.save();
   
-  // Add a soft white glow so dark outlines and ZZZs stand out on any background
+  // Add a soft white glow so dark outlines and ZZZs stand out beautifully
   ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
   ctx.shadowBlur = 8;
-  
+
+  // 设置变换基准原点为猫咪底部中心，实现绝对贴地平滑微动
+  const pivotX = offsetX + dw / 2;
+  const pivotY = offsetY + dh;
+  ctx.translate(pivotX, pivotY);
+
+  // 代码级 60FPS 物理驱动算法
+  if (currentState === 'sleep') {
+    // 极其轻柔的 3.5 秒周期深呼吸起伏
+    const breatheY = 1 + Math.sin(timestamp / 550) * 0.018;
+    const breatheX = 1 - Math.sin(timestamp / 550) * 0.006;
+    ctx.scale(breatheX, breatheY);
+  } else if (currentState === 'eat') {
+    // 欢快轻微的进食点头与咀嚼韵律
+    const tilt = Math.sin(timestamp / 150) * 0.015; // 左右微晃
+    const munchY = 1 + Math.abs(Math.sin(timestamp / 120)) * 0.012; // 垂直微弹
+    ctx.rotate(tilt);
+    ctx.scale(1, munchY);
+  }
+
+  // 绘制单张高清图片（相对于新的基准原点）
   ctx.drawImage(
     sheet.img,
     actualSx, actualSy, sw, sh,
-    offsetX, offsetY, dw, dh
+    -dw / 2, -dh, dw, dh
   );
   
   ctx.restore();
+
+  // 睡觉状态下，额外生成优雅的高清动态 Zzz 粒子气泡飘动效果
+  if (currentState === 'sleep') {
+    ctx.save();
+    ctx.fillStyle = '#8CA0B3';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+    ctx.shadowBlur = 4;
+    const loopDuration = 3500;
+    const phase = (timestamp % loopDuration) / loopDuration;
+    
+    for (let i = 0; i < 3; i++) {
+      const pPhase = (phase + i * 0.33) % 1;
+      const alpha = Math.sin(pPhase * Math.PI); // 淡入淡出
+      ctx.globalAlpha = alpha * 0.7;
+      
+      const zx = offsetX + dw * 0.6 + Math.sin(pPhase * Math.PI * 2) * 6 + i * 4;
+      const zy = offsetY + dh * 0.45 - pPhase * 40;
+      
+      ctx.font = i === 2 ? 'bold 15px sans-serif' : 'bold 11px sans-serif';
+      ctx.fillText(i === 2 ? 'Z' : 'z', zx, zy);
+    }
+    ctx.restore();
+  }
 }
 
 function drawFallbackPet(timestamp) {
