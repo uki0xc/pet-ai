@@ -10,7 +10,7 @@ const { getCurrentWindow } = window.__TAURI__.window;
 // ============================================================
 
 const CANVAS_SIZE = 200;
-const FRAME_DURATION = 400; // ms per animation frame (slower, cozier feel)
+const FRAME_DURATION = 900; // ms per animation frame (slower, extremely cozy and continuous feel)
 
 // Each sprite sheet is a 3x4 grid = 12 frames
 const GRID_COLS = 3;
@@ -165,15 +165,23 @@ function drawFrame(timestamp) {
   ctx.fill();
   ctx.restore();
 
-  // Calculate draw dimensions preserving original aspect ratio
+  // Calculate inner crop margins to eliminate bleed from neighboring frames
+  const marginX = 20;
+  const marginY = 25;
+  const sw = sheet.frameWidth - marginX * 2;
+  const sh = sheet.frameHeight - marginY * 2;
+  const actualSx = sx + marginX;
+  const actualSy = sy + marginY;
+
+  // Calculate draw dimensions preserving cropped aspect ratio
   const maxDrawSize = 170;
   let dw = maxDrawSize;
   let dh = maxDrawSize;
 
-  if (sheet.frameWidth > sheet.frameHeight) {
-    dh = maxDrawSize * (sheet.frameHeight / sheet.frameWidth);
+  if (sw > sh) {
+    dh = maxDrawSize * (sh / sw);
   } else {
-    dw = maxDrawSize * (sheet.frameWidth / sheet.frameHeight);
+    dw = maxDrawSize * (sw / sh);
   }
 
   const offsetX = (CANVAS_SIZE - dw) / 2;
@@ -187,7 +195,7 @@ function drawFrame(timestamp) {
   
   ctx.drawImage(
     sheet.img,
-    sx, sy, sheet.frameWidth, sheet.frameHeight,
+    actualSx, actualSy, sw, sh,
     offsetX, offsetY, dw, dh
   );
   
