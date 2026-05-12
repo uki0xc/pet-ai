@@ -165,10 +165,19 @@ function drawFrame(timestamp) {
   ctx.fill();
   ctx.restore();
 
-  // Calculate draw dimensions
-  const drawSize = 170;
-  const offsetX = (CANVAS_SIZE - drawSize) / 2;
-  const offsetY = (CANVAS_SIZE - drawSize) / 2 - 8;
+  // Calculate draw dimensions preserving original aspect ratio
+  const maxDrawSize = 170;
+  let dw = maxDrawSize;
+  let dh = maxDrawSize;
+
+  if (sheet.frameWidth > sheet.frameHeight) {
+    dh = maxDrawSize * (sheet.frameHeight / sheet.frameWidth);
+  } else {
+    dw = maxDrawSize * (sheet.frameWidth / sheet.frameHeight);
+  }
+
+  const offsetX = (CANVAS_SIZE - dw) / 2;
+  const offsetY = (CANVAS_SIZE - dh) / 2 - 8;
 
   ctx.save();
   
@@ -179,7 +188,7 @@ function drawFrame(timestamp) {
   ctx.drawImage(
     sheet.img,
     sx, sy, sheet.frameWidth, sheet.frameHeight,
-    offsetX, offsetY, drawSize, drawSize
+    offsetX, offsetY, dw, dh
   );
   
   ctx.restore();
