@@ -17,8 +17,8 @@ const GRID_COLS = 3;
 const GRID_ROWS = 4;
 
 const STATES = {
-  eat:   { src: '/assets/cat_eat.png',   frames: 12, label: '吃饭中~' },
-  sleep: { src: '/assets/cat_sleep.png', frames: 12, label: 'Zzz...' },
+  eat:   { src: '/assets/cat_eat.webp', type: 'webp',   label: '吃饭中~' },
+  sleep: { src: '/assets/cat_sleep.png', type: 'sprite', frames: 12, label: 'Zzz...' },
 };
 
 // Random messages for each state
@@ -32,7 +32,7 @@ const MESSAGES = {
 // State
 // ============================================================
 
-let currentState = 'eat';
+let currentState = '';
 let currentFrame = 0;
 let lastFrameTime = 0;
 
@@ -48,6 +48,7 @@ const canvas = document.getElementById('pet-canvas');
 const ctx = canvas.getContext('2d');
 
 // UI elements
+const petWebp = document.getElementById('pet-webp');
 const contextMenu = document.getElementById('context-menu');
 const statusBubble = document.getElementById('status-bubble');
 const statusText = document.getElementById('status-text');
@@ -58,6 +59,16 @@ const statusText = document.getElementById('status-text');
 
 function loadAllSprites() {
   for (const [state, config] of Object.entries(STATES)) {
+    if (config.type === 'webp') {
+      spritesLoaded++;
+      console.log(`✅ Configured WebP for ${state}`);
+      if (spritesLoaded === totalSprites) {
+        setState('eat');
+        requestAnimationFrame(gameLoop);
+      }
+      continue;
+    }
+
     const img = new Image();
     img.onload = () => {
       // Process image to remove pure white background via flood-fill
@@ -109,6 +120,7 @@ function loadAllSprites() {
       spritesLoaded++;
       console.log(`✅ Loaded ${state}`);
       if (spritesLoaded === totalSprites) {
+        setState('eat');
         requestAnimationFrame(gameLoop);
       }
     };
@@ -116,6 +128,7 @@ function loadAllSprites() {
       console.error(`Failed to load sprite for ${state}`, e);
       spritesLoaded++;
       if (spritesLoaded === totalSprites) {
+        setState('eat');
         requestAnimationFrame(gameLoop);
       }
     };
@@ -136,6 +149,14 @@ function getFrameCoords(frameIndex) {
 
 function drawFrame(timestamp) {
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  const stateConfig = STATES[currentState];
+  if (!stateConfig) return;
+
+  if (stateConfig.type === 'webp') {
+    // 渲染独立 WebP 动图时无需绘制 Canvas 本体
+    return;
+  }
 
   const sheet = spriteSheets[currentState];
   if (!sheet) {
@@ -377,6 +398,16 @@ function setState(newState) {
   currentState = newState;
   currentFrame = 0;
   lastFrameTime = 0;
+
+  const stateConfig = STATES[newState];
+  if (stateConfig && stateConfig.type === 'webp') {
+    petWebp.src = stateConfig.src;
+    petWebp.classList.remove('hidden');
+  } else {
+    petWebp.classList.add('hidden');
+    petWebp.src = '';
+  }
+
   showRandomMessage(newState);
 }
 
