@@ -12,15 +12,15 @@ const { getCurrentWindow } = window.__TAURI__.window;
 const CANVAS_SIZE = 200;
 const FRAME_DURATION = 400; // ms per animation frame (slower, cozier feel)
 
-// Each sprite sheet is a 2x2 grid = 4 frames
-const GRID_COLS = 2;
-const GRID_ROWS = 2;
+// Each sprite sheet is a 3x4 grid = 12 frames
+const GRID_COLS = 3;
+const GRID_ROWS = 4;
 
 // Pet states -> sprite sheets
 const STATES = {
-  eat:   { src: '/assets/cat_eat.png',   frames: 4, label: '吃饭中~' },
-  sleep: { src: '/assets/cat_sleep.png', frames: 4, label: 'Zzz...' },
-  play:  { src: '/assets/cat_play.png',  frames: 4, label: '玩耍中~' },
+  eat:   { src: '/assets/cat_eat.png',   frames: 12, label: '吃饭中~' },
+  sleep: { src: '/assets/cat_sleep.png', frames: 12, label: 'Zzz...' },
+  play:  { src: '/assets/cat_play.png',  frames: 12, label: '玩耍中~' },
 };
 
 // Random messages for each state
