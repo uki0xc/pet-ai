@@ -1,7 +1,78 @@
-# Tauri + Vanilla
+# 🐱 River Pet
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+一只能陪你工作、能记住你、能换品种的桌面宠物。基于 Tauri 2 + Canvas 渲染，跨 macOS / Windows 双平台。
 
-## Recommended IDE Setup
+## ✨ 特性
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### 🎨 多品种切换
+- **乌龙茶**：默认橘猫，全状态多帧动画
+- **虎皮卷**：专属插画风格，目前支持睡觉、发呆、注视
+- **小车**：暂时未做
+
+每个品种可以拥有自己的专属图片或共用乌龙茶的素材，通过 `THEME_STATE_OVERRIDES` 配置即可扩展。右键菜单也是按品种动态生成的，避免出现该品种没有的状态。
+
+### 🎮 状态系统
+猫咪会根据时间和随机算法在以下状态间切换：
+- 🍗 吃饭（多帧动画 + 咀嚼节奏）
+- 😴 睡觉（呼吸起伏 + Zzz 粒子飘散）
+- ⚽ 玩耍（左右摇摆 + 弹跳节奏）
+- 😶 发呆（缓慢呼吸 + 微微歪头）
+- 👀 注视（虎皮卷专属）
+
+所有状态都有专属的物理驱动微动画，告别"幻灯片切换"感。
+
+### 🎯 交互
+- 左键拖拽桌宠
+- 双击撸猫，触发心形粒子
+- 右键弹出菜单（动态生成，根据当前品种）
+- 像素级穿透：仅猫咪本体响应鼠标，背景透明区域不挡其他应用
+- 支持桌宠 50% ~ 200% 任意缩放，气泡和粒子效果跟随尺寸
+- 窗口可调透明度（30% ~ 100%）
+
+### 🍔 系统集成
+- **托盘 / 菜单栏图标**：Windows 任务栏托盘 + macOS 菜单栏，左键切换显示，右键弹出菜单
+- **单实例运行**：双击启动第二次只会聚焦已运行实例
+- **开机自启动**：可在设置中开启
+- **窗口位置记忆**：下次启动恢复到上次的位置
+- **全局快捷键**：
+  - `⌘ / Ctrl + ⇧ + P`：显示 / 隐藏桌宠
+  - `⌘ / Ctrl + ⇧ + L`：切换宠物品种
+
+### ⚙️ 高级设置
+- 整体大小 / 透明度滑块
+- 自动行为开关 + 触发频率（安静 / 默认 / 活跃）
+- 自定义作息时间表（区段 → 状态映射）
+- 自定义说话内容（每个状态独立编辑）
+- 生日提醒（每年到生日当天宠物自动庆祝）
+- 陪伴统计（已陪伴天数、被摸次数、换宠次数、启动次数）
+- 一键全部重置
+
+### 🎁 彩蛋
+- 状态切换、撸猫、换宠都会触发个性化的随机文案
+- 用户手动选择某个状态后，自动行为会被锁 10 分钟，给猫咪"一个安静的休息时间"
+- 玩耍 / 发呆 等状态有变体轮换，画面不会一成不变
+
+## 📦 技术栈
+
+- **前端**：Vanilla JavaScript + Canvas 2D + 纯 CSS
+- **后端**：Tauri 2 + Rust
+- **关键 Tauri 插件**：
+  - `tauri-plugin-single-instance` 单实例
+  - `tauri-plugin-autostart` 开机自启
+  - `tauri-plugin-window-state` 窗口位置记忆
+  - `tauri-plugin-global-shortcut` 全局快捷键
+
+
+## 📝 License
+
+本项目基于 [GNU Affero General Public License v3.0](./LICENSE) 发布。
+
+简单来说：
+
+- ✅ 你可以自由使用、修改、分发本项目
+- ⚠️ 任何修改后的版本必须以同样的 AGPL-3.0 许可证开源
+- ⚠️ 如果你把修改版部署成网络服务（让别人通过网络访问），也必须公开你的源码
+- ⚠️ 必须保留版权声明和许可证文本
+
+完整条款见 [LICENSE](./LICENSE)。
+
