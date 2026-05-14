@@ -9,8 +9,8 @@
 }
 
 html, body {
-  width: 200px;
-  height: 200px;
+  width: 500px;
+  height: 500px;
   overflow: hidden;
   background: transparent;
   user-select: none;
@@ -19,8 +19,8 @@ html, body {
 
 #pet-canvas {
   display: block;
-  width: 200px;
-  height: 200px;
+  width: 500px;
+  height: 500px;
   background: transparent;
   cursor: grab;
   image-rendering: pixelated;
@@ -59,6 +59,10 @@ html, body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 0 3px;
+}
+
+.menu-grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 @keyframes menuSlideIn {
@@ -121,7 +125,6 @@ html, body {
 
 .status-bubble {
   position: fixed;
-  bottom: 170px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(30, 30, 40, 0.88);

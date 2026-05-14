@@ -4,6 +4,8 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager,
 };
+use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 #[tauri::command]
 fn set_ignore_cursor(window: tauri::Window, ignore: bool) -> Result<(), String> {
@@ -12,12 +14,110 @@ fn set_ignore_cursor(window: tauri::Window, ignore: bool) -> Result<(), String> 
         .map_err(|e| e.to_string())
 }
 
+/// 获取鼠标相对当前窗口的逻辑像素坐标。
+/// 即使窗口启用 ignore_cursor_events 时也能正常获取，用于"仅猫咪本体可点击"的命中检测。
+#[tauri::command]
+fn get_cursor_pos(app: tauri::AppHandle, window: tauri::Window) -> Result<(f64, f64), String> {
+    let cursor = app.cursor_position().map_err(|e| e.to_string())?;
+    let win_pos = window.outer_position().map_err(|e| e.to_string())?;
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    let rel_x = (cursor.x - win_pos.x as f64) / scale;
+    let rel_y = (cursor.y - win_pos.y as f64) / scale;
+    Ok((rel_x, rel_y))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    // 单实例守护：第二次启动时直接聚焦已运行的桌宠，禁止开多个
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.show();
+                let _ = win.unminimize();
+                let _ = win.set_focus();
+            }
+        }));
+    }
+
+    builder
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![set_ignore_cursor])
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        // Cmd/Ctrl + Shift + P : 切换桌宠显示/隐藏
+                        let toggle = Shortcut::new(
+                            Some(Modifiers::SUPER | Modifiers::SHIFT),
+                            Code::KeyP,
+                        );
+                        let toggle_ctrl = Shortcut::new(
+                            Some(Modifiers::CONTROL | Modifiers::SHIFT),
+                            Code::KeyP,
+                        );
+                        if shortcut == &toggle || shortcut == &toggle_ctrl {
+                            if let Some(win) = app.get_webview_window("main") {
+                                if win.is_visible().unwrap_or(false) {
+                                    let _ = win.hide();
+                                } else {
+                                    let _ = win.show();
+                                    let _ = win.set_focus();
+                                }
+                            }
+                        }
+
+                        // Cmd/Ctrl + Shift + L : 切换宠物品种
+                        let switch = Shortcut::new(
+                            Some(Modifiers::SUPER | Modifiers::SHIFT),
+                            Code::KeyL,
+                        );
+                        let switch_ctrl = Shortcut::new(
+                            Some(Modifiers::CONTROL | Modifiers::SHIFT),
+                            Code::KeyL,
+                        );
+                        if shortcut == &switch || shortcut == &switch_ctrl {
+                            if let Some(win) = app.get_webview_window("main") {
+                                let _ = win.emit("tray://switch-pet", ());
+                            }
+                        }
+                    }
+                })
+                .build(),
+        )
+        .invoke_handler(tauri::generate_handler![set_ignore_cursor, get_cursor_pos])
         .setup(|app| {
+            // 注册全局快捷键
+            #[cfg(desktop)]
+            {
+                let toggle_super = Shortcut::new(
+                    Some(Modifiers::SUPER | Modifiers::SHIFT),
+                    Code::KeyP,
+                );
+                let toggle_ctrl = Shortcut::new(
+                    Some(Modifiers::CONTROL | Modifiers::SHIFT),
+                    Code::KeyP,
+                );
+                let switch_super = Shortcut::new(
+                    Some(Modifiers::SUPER | Modifiers::SHIFT),
+                    Code::KeyL,
+                );
+                let switch_ctrl = Shortcut::new(
+                    Some(Modifiers::CONTROL | Modifiers::SHIFT),
+                    Code::KeyL,
+                );
+                let _ = app.global_shortcut().register(toggle_super);
+                let _ = app.global_shortcut().register(toggle_ctrl);
+                let _ = app.global_shortcut().register(switch_super);
+                let _ = app.global_shortcut().register(switch_ctrl);
+            }
+
             // 构建托盘菜单
             let show_item = MenuItem::with_id(app, "show", "显示桌宠", true, None::<&str>)?;
             let hide_item = MenuItem::with_id(app, "hide", "隐藏桌宠", true, None::<&str>)?;

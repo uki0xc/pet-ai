@@ -13,6 +13,7 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --border-color: rgba(255, 255, 255, 0.1);
+      --danger: #ef4444;
     }
 
     * {
@@ -33,17 +34,15 @@
 
     .header-bg {
       background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-      padding: 24px 20px 32px;
+      padding: 20px 20px 28px;
       border-bottom-left-radius: 24px;
       border-bottom-right-radius: 24px;
       box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
-      position: relative;
     }
 
     .header-title {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
-      letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -51,17 +50,17 @@
 
     .header-subtitle {
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.85);
       margin-top: 4px;
     }
 
     .container {
-      padding: 0 20px 24px;
+      padding: 0 16px 24px;
       margin-top: -16px;
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
 
     .card {
@@ -69,18 +68,13 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 14px;
+      padding: 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      transition: transform 0.2s ease;
-    }
-
-    .card:hover {
-      border-color: rgba(99, 102, 241, 0.3);
     }
 
     .card-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--accent-color);
       margin-bottom: 12px;
@@ -89,23 +83,16 @@
       gap: 6px;
     }
 
-    /* Slider styling */
-    .slider-group {
-      margin-bottom: 14px;
-    }
-
-    .slider-group:last-child {
-      margin-bottom: 0;
-    }
-
+    /* Sliders */
+    .slider-group { margin-bottom: 12px; }
+    .slider-group:last-child { margin-bottom: 0; }
     .slider-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 13px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
-
     .slider-value {
       background: rgba(99, 102, 241, 0.2);
       color: #a5b4fc;
@@ -114,7 +101,6 @@
       font-size: 12px;
       font-weight: 600;
     }
-
     input[type=range] {
       -webkit-appearance: none;
       width: 100%;
@@ -123,7 +109,6 @@
       border-radius: 3px;
       outline: none;
     }
-
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
@@ -133,122 +118,305 @@
       background: var(--accent-color);
       cursor: pointer;
       box-shadow: 0 0 10px var(--accent-color);
-      transition: transform 0.1s ease;
     }
 
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-      background: #818cf8;
-    }
-
-    /* Info items */
-    .info-row {
+    /* Switch (toggle) */
+    .switch-row {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 13px;
       padding: 6px 0;
+    }
+    .switch-row + .switch-row {
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .switch-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .switch-hint {
+      font-size: 11px;
       color: var(--text-muted);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
-
-    .info-row:last-child {
-      border-bottom: none;
-    }
-
-    .info-row span:last-child {
-      color: var(--text-main);
-      font-weight: 500;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(135deg, var(--accent-color) 0%, #818cf8 100%);
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
+    .toggle {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 11px;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-      transition: all 0.2s ease;
-      margin-top: auto;
+      transition: background 0.18s;
+      flex-shrink: 0;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.18s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .toggle.on {
+      background: var(--accent-color);
+    }
+    .toggle.on::after {
+      transform: translateX(16px);
     }
 
-    .btn:hover {
-      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
-      transform: translateY(-1px);
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-    }
-
-    /* Theme Switching Grid */
+    /* Theme grid */
     .theme-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
     }
-
     .theme-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 10px;
       font-size: 12px;
       font-weight: 500;
       color: var(--text-muted);
       text-align: center;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.15s;
     }
-
     .theme-btn:hover {
       background: rgba(255, 255, 255, 0.1);
       color: var(--text-main);
     }
-
     .theme-btn.active {
       background: rgba(99, 102, 241, 0.25);
       border-color: var(--accent-color);
       color: #a5b4fc;
       font-weight: 600;
     }
+
+    /* Frequency segment */
+    .segment {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px;
+      border-radius: 10px;
+    }
+    .segment-btn {
+      padding: 6px;
+      border-radius: 7px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .segment-btn.active {
+      background: rgba(99, 102, 241, 0.6);
+      color: white;
+      font-weight: 600;
+    }
+
+    /* Inputs */
+    input[type=text], input[type=date], input[type=number], select, textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent-color);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 50px;
+      font-family: inherit;
+    }
+
+    /* Schedule editor */
+    .schedule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .schedule-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr 28px;
+      gap: 6px;
+      align-items: center;
+    }
+    .schedule-row select,
+    .schedule-row input {
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+    .icon-btn {
+      background: rgba(239, 68, 68, 0.15);
+      border: none;
+      color: #fca5a5;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .icon-btn:hover { background: rgba(239, 68, 68, 0.3); color: white; }
+
+    .small-btn {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #c7d2fe;
+      padding: 6px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .small-btn:hover {
+      background: rgba(99, 102, 241, 0.35);
+      color: white;
+    }
+
+    /* Custom messages tabs */
+    .tab-row {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .tab {
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: rgba(99, 102, 241, 0.4);
+      color: white;
+    }
+
+    /* Stats */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .stat-tile {
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: #a5b4fc;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Bottom buttons */
+    .btn {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent-color) 0%, #818cf8 100%);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      transition: all 0.2s;
+    }
+    .btn:hover { box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5); transform: translateY(-1px); }
+
+    .btn.btn-danger {
+      background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .btn.btn-danger:hover { box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5); }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 4px 0;
+      color: var(--text-muted);
+    }
+    .info-row span:last-child { color: var(--text-main); }
   </style>
 </head>
 <body>
 
   <div class="header-bg">
-    <div class="header-title">⚙️ 桌宠偏好设置</div>
-    <div class="header-subtitle">实时调整画面比例与运行参数</div>
+    <div class="header-title">⚙️ River Pet 高级设置</div>
+    <div class="header-subtitle">实时调整外观、行为与作息</div>
   </div>
 
   <div class="container">
-    <!-- 缩放设置 -->
+
+    <!-- 1. 基础外观 -->
     <div class="card">
-      <div class="card-title">🔍 发呆单帧图缩放实时控制</div>
-      
+      <div class="card-title">🎨 外观</div>
+
       <div class="slider-group">
         <div class="slider-header">
-          <span>图片一 (cat_daze.png)</span>
-          <span class="slider-value" id="val-daze">1.35x</span>
+          <span>整体大小</span>
+          <span class="slider-value" id="val-size">100%</span>
         </div>
-        <input type="range" id="slider-daze" min="0.8" max="2.0" step="0.05" value="1.35">
+        <input type="range" id="slider-size" min="0.5" max="2.0" step="0.05" value="1.0">
       </div>
 
       <div class="slider-group">
         <div class="slider-header">
-          <span>图片二 (cat_daze2.png)</span>
-          <span class="slider-value" id="val-daze2">1.25x</span>
+          <span>窗口不透明度</span>
+          <span class="slider-value" id="val-opacity">100%</span>
         </div>
-        <input type="range" id="slider-daze2" min="0.8" max="2.0" step="0.05" value="1.25">
+        <input type="range" id="slider-opacity" min="0.3" max="1.0" step="0.05" value="1.0">
       </div>
     </div>
 
-    <!-- 宠物品种选择 -->
+    <!-- 2. 宠物品种 -->
     <div class="card">
-      <div class="card-title">🐱 桌宠切换</div>
+      <div class="card-title">🐱 宠物品种</div>
       <div class="theme-grid">
         <div class="theme-btn active" data-theme="oolong">乌龙茶</div>
         <div class="theme-btn" data-theme="tiger">虎皮卷</div>
@@ -256,97 +424,411 @@
       </div>
     </div>
 
-    <!-- 运行状态信息 -->
+    <!-- 3. 行为与作息 -->
     <div class="card">
-      <div class="card-title">ℹ️ 应用详情</div>
-      <div class="info-row">
-        <span>当前交互逻辑</span>
-        <span>直接变体交替切换</span>
+      <div class="card-title">🎮 行为与自动化</div>
+
+      <div class="switch-row">
+        <div class="switch-label">
+          <span>自动行为</span>
+          <span class="switch-hint">关闭后宠物只按你右键命令切换</span>
+        </div>
+        <div class="toggle on" id="toggle-auto"></div>
       </div>
-      <div class="info-row">
-        <span>手动锁定保持期</span>
-        <span>维持 10 分钟</span>
+
+      <div class="switch-row">
+        <div class="switch-label">
+          <span>开机自启动</span>
+          <span class="switch-hint">系统启动后自动加载 River Pet</span>
+        </div>
+        <div class="toggle" id="toggle-autostart"></div>
       </div>
-      <div class="info-row">
-        <span>渲染引擎</span>
-        <span>代码级 60FPS 平滑驱动</span>
+
+      <div class="switch-row">
+        <div class="switch-label">
+          <span>记忆窗口位置</span>
+          <span class="switch-hint">下次启动还在原位</span>
+        </div>
+        <div class="toggle on" id="toggle-remember"></div>
       </div>
-      <div class="info-row">
-        <span>开发环境支持</span>
-        <span>Tauri v2 跨平台原生框架</span>
+
+      <div class="switch-row" style="display: block;">
+        <div class="switch-label" style="margin-bottom: 6px;">
+          <span>触发频率</span>
+          <span class="switch-hint">控制自动切换状态的密度</span>
+        </div>
+        <div class="segment" id="freq-segment">
+          <div class="segment-btn" data-freq="calm">🧘 安静</div>
+          <div class="segment-btn active" data-freq="normal">🐾 默认</div>
+          <div class="segment-btn" data-freq="active">⚡ 活跃</div>
+        </div>
       </div>
     </div>
 
-    <button class="btn" id="btn-save">完成并关闭设置</button>
+    <!-- 4. 作息时间表 -->
+    <div class="card">
+      <div class="card-title">🕒 自定义作息表</div>
+      <div class="schedule-list" id="schedule-list"></div>
+      <button class="small-btn" id="btn-add-slot">＋ 添加时段</button>
+      <div class="switch-hint" style="margin-top: 8px; line-height: 1.5;">
+        留空时使用默认作息（夜间睡觉 / 早午晚吃饭 / 白天玩耍）。<br>
+        跨午夜时段填法：开始 22 → 结束 7。
+      </div>
+    </div>
+
+    <!-- 5. 自定义文案 -->
+    <div class="card">
+      <div class="card-title">💬 自定义说话内容</div>
+      <div class="tab-row" id="msg-tabs">
+        <div class="tab active" data-state="eat">🍗 吃饭</div>
+        <div class="tab" data-state="sleep">😴 睡觉</div>
+        <div class="tab" data-state="play">⚽ 玩耍</div>
+        <div class="tab" data-state="daze">😶 发呆</div>
+        <div class="tab" data-state="pet">💖 摸头</div>
+      </div>
+      <textarea id="msg-text" rows="4" placeholder="每行一句，留空使用默认文案"></textarea>
+    </div>
+
+    <!-- 6. 生日 -->
+    <div class="card">
+      <div class="card-title">🎂 生日提醒</div>
+      <input type="date" id="input-birthday">
+      <div class="switch-hint" style="margin-top: 6px;">
+        每年到这一天，桌宠会自动庆祝。
+      </div>
+    </div>
+
+    <!-- 7. 全局快捷键 -->
+    <div class="card">
+      <div class="card-title">⌨️ 全局快捷键</div>
+      <div class="info-row">
+        <span>显示 / 隐藏桌宠</span>
+        <span><span class="kbd">⌘ / Ctrl</span> + <span class="kbd">⇧</span> + <span class="kbd">P</span></span>
+      </div>
+      <div class="info-row">
+        <span>切换宠物品种</span>
+        <span><span class="kbd">⌘ / Ctrl</span> + <span class="kbd">⇧</span> + <span class="kbd">L</span></span>
+      </div>
+    </div>
+
+    <!-- 8. 统计 -->
+    <div class="card">
+      <div class="card-title">📊 陪伴统计</div>
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <div class="stat-num" id="stat-days">0</div>
+          <div class="stat-label">已陪伴天数</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num" id="stat-pet">0</div>
+          <div class="stat-label">被摸次数</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num" id="stat-switch">0</div>
+          <div class="stat-label">换宠次数</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num" id="stat-sessions">0</div>
+          <div class="stat-label">启动次数</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="btn-row">
+      <button class="btn btn-danger" id="btn-reset">🔄 全部重置</button>
+      <button class="btn" id="btn-save">完成并关闭</button>
+    </div>
   </div>
 
   <script>
     const { getCurrentWindow } = window.__TAURI__.window;
+    const { invoke } = window.__TAURI__.core;
 
-    // 获取并填充初始值
-    const sliderDaze = document.getElementById('slider-daze');
-    const sliderDaze2 = document.getElementById('slider-daze2');
-    const valDaze = document.getElementById('val-daze');
-    const valDaze2 = document.getElementById('val-daze2');
+    // 自启动插件包装（直接调用 plugin invoke 命令，最稳定）
+    const autostartApi = {
+      isEnabled: () => invoke('plugin:autostart|is_enabled'),
+      enable: () => invoke('plugin:autostart|enable'),
+      disable: () => invoke('plugin:autostart|disable'),
+    };
 
-    const savedDaze = localStorage.getItem('pet_daze_scale');
-    if (savedDaze) {
-      sliderDaze.value = savedDaze;
-      valDaze.textContent = savedDaze + 'x';
+    // ============================================================
+    // 工具
+    // ============================================================
+    const { emit } = window.__TAURI__.event;
+
+    function setStorage(key, value) {
+      localStorage.setItem(key, value);
+      // Tauri 多 webview 的 storage 事件可能不跨进程触发，显式广播一次
+      emit('settings:changed', { key, value }).catch(() => {});
     }
 
-    const savedDaze2 = localStorage.getItem('pet_daze2_scale');
-    if (savedDaze2) {
-      sliderDaze2.value = savedDaze2;
-      valDaze2.textContent = savedDaze2 + 'x';
+    // ============================================================
+    // 1. 整体大小
+    // ============================================================
+    const sliderSize = document.getElementById('slider-size');
+    const valSize = document.getElementById('val-size');
+    const savedSize = localStorage.getItem('pet_size_scale');
+    if (savedSize) {
+      sliderSize.value = savedSize;
+      valSize.textContent = Math.round(parseFloat(savedSize) * 100) + '%';
     }
-
-    // 实时更新数值并广播至主窗口
-    sliderDaze.addEventListener('input', (e) => {
+    sliderSize.addEventListener('input', (e) => {
       const v = e.target.value;
-      valDaze.textContent = v + 'x';
-      localStorage.setItem('pet_daze_scale', v);
+      valSize.textContent = Math.round(parseFloat(v) * 100) + '%';
+      setStorage('pet_size_scale', v);
     });
 
-    sliderDaze2.addEventListener('input', (e) => {
+    // ============================================================
+    // 2. 不透明度
+    // ============================================================
+    const sliderOpacity = document.getElementById('slider-opacity');
+    const valOpacity = document.getElementById('val-opacity');
+    const savedOpacity = localStorage.getItem('pet_opacity');
+    if (savedOpacity) {
+      sliderOpacity.value = savedOpacity;
+      valOpacity.textContent = Math.round(parseFloat(savedOpacity) * 100) + '%';
+    }
+    sliderOpacity.addEventListener('input', (e) => {
       const v = e.target.value;
-      valDaze2.textContent = v + 'x';
-      localStorage.setItem('pet_daze2_scale', v);
+      valOpacity.textContent = Math.round(parseFloat(v) * 100) + '%';
+      setStorage('pet_opacity', v);
     });
 
-    // 宠物品种选择逻辑
+    // ============================================================
+    // 3. 宠物品种
+    // ============================================================
     const themeBtns = document.querySelectorAll('.theme-btn');
     const currentSavedTheme = localStorage.getItem('pet_current_theme') || 'oolong';
-    
     themeBtns.forEach(btn => {
-      if (btn.dataset.theme === currentSavedTheme) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-
+      btn.classList.toggle('active', btn.dataset.theme === currentSavedTheme);
       btn.addEventListener('click', () => {
         themeBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        localStorage.setItem('pet_current_theme', btn.dataset.theme);
+        setStorage('pet_current_theme', btn.dataset.theme);
       });
     });
 
-    // 监听 storage 变更自动同步高亮（例如用户在右键菜单一键换宠）
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'pet_current_theme') {
-        themeBtns.forEach(b => {
-          b.classList.toggle('active', b.dataset.theme === e.newValue);
-        });
+    // ============================================================
+    // 4. 自动行为开关
+    // ============================================================
+    function bindToggle(toggleEl, key, defaultOn = true) {
+      const stored = localStorage.getItem(key);
+      const isOn = stored === null ? defaultOn : stored !== 'false';
+      toggleEl.classList.toggle('on', isOn);
+      toggleEl.addEventListener('click', () => {
+        const next = !toggleEl.classList.contains('on');
+        toggleEl.classList.toggle('on', next);
+        setStorage(key, String(next));
+      });
+    }
+    bindToggle(document.getElementById('toggle-auto'), 'pet_auto_actions_enabled', true);
+    bindToggle(document.getElementById('toggle-remember'), 'pet_remember_position', true);
+
+    // ============================================================
+    // 5. 开机自启
+    // ============================================================
+    const toggleAutostart = document.getElementById('toggle-autostart');
+    (async () => {
+      try {
+        const enabled = await autostartApi.isEnabled();
+        toggleAutostart.classList.toggle('on', enabled);
+      } catch (e) { console.error('autostart isEnabled error', e); }
+    })();
+    toggleAutostart.addEventListener('click', async () => {
+      const next = !toggleAutostart.classList.contains('on');
+      try {
+        if (next) await autostartApi.enable();
+        else await autostartApi.disable();
+        toggleAutostart.classList.toggle('on', next);
+      } catch (e) {
+        console.error('autostart toggle failed', e);
+        alert('开机自启切换失败：' + e);
       }
     });
 
-    // 关闭窗口
+    // ============================================================
+    // 6. 触发频率
+    // ============================================================
+    const freqSegment = document.getElementById('freq-segment');
+    const savedFreq = localStorage.getItem('pet_action_frequency') || 'normal';
+    freqSegment.querySelectorAll('.segment-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.freq === savedFreq);
+      b.addEventListener('click', () => {
+        freqSegment.querySelectorAll('.segment-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        setStorage('pet_action_frequency', b.dataset.freq);
+      });
+    });
+
+    // ============================================================
+    // 7. 作息表
+    // ============================================================
+    const STATE_OPTIONS = [
+      { value: 'sleep', label: '😴 睡觉' },
+      { value: 'eat', label: '🍗 吃饭' },
+      { value: 'play', label: '⚽ 玩耍' },
+      { value: 'daze', label: '😶 发呆' },
+    ];
+    let scheduleData = JSON.parse(localStorage.getItem('pet_schedule') || '[]');
+    if (!Array.isArray(scheduleData)) scheduleData = [];
+    const scheduleList = document.getElementById('schedule-list');
+
+    function saveSchedule() {
+      setStorage('pet_schedule', JSON.stringify(scheduleData));
+    }
+
+    function renderSchedule() {
+      scheduleList.innerHTML = '';
+      scheduleData.forEach((slot, idx) => {
+        const row = document.createElement('div');
+        row.className = 'schedule-row';
+
+        const startInput = document.createElement('input');
+        startInput.type = 'number';
+        startInput.min = 0;
+        startInput.max = 23;
+        startInput.value = slot.startHour;
+        startInput.placeholder = '开始时';
+        startInput.addEventListener('change', () => {
+          scheduleData[idx].startHour = clampHour(startInput.value);
+          startInput.value = scheduleData[idx].startHour;
+          saveSchedule();
+        });
+
+        const endInput = document.createElement('input');
+        endInput.type = 'number';
+        endInput.min = 0;
+        endInput.max = 24;
+        endInput.value = slot.endHour;
+        endInput.placeholder = '结束时';
+        endInput.addEventListener('change', () => {
+          scheduleData[idx].endHour = clampHour(endInput.value);
+          endInput.value = scheduleData[idx].endHour;
+          saveSchedule();
+        });
+
+        const select = document.createElement('select');
+        STATE_OPTIONS.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label;
+          if (opt.value === slot.state) o.selected = true;
+          select.appendChild(o);
+        });
+        select.addEventListener('change', () => {
+          scheduleData[idx].state = select.value;
+          saveSchedule();
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'icon-btn';
+        removeBtn.textContent = '×';
+        removeBtn.title = '删除时段';
+        removeBtn.addEventListener('click', () => {
+          scheduleData.splice(idx, 1);
+          saveSchedule();
+          renderSchedule();
+        });
+
+        row.appendChild(startInput);
+        row.appendChild(endInput);
+        row.appendChild(select);
+        row.appendChild(removeBtn);
+        scheduleList.appendChild(row);
+      });
+    }
+
+    function clampHour(v) {
+      let n = parseInt(v) || 0;
+      if (n < 0) n = 0;
+      if (n > 24) n = 24;
+      return n;
+    }
+
+    document.getElementById('btn-add-slot').addEventListener('click', () => {
+      scheduleData.push({ startHour: 9, endHour: 12, state: 'play' });
+      saveSchedule();
+      renderSchedule();
+    });
+    renderSchedule();
+
+    // ============================================================
+    // 8. 自定义文案
+    // ============================================================
+    const msgTabs = document.getElementById('msg-tabs');
+    const msgText = document.getElementById('msg-text');
+    let currentMsgState = 'eat';
+    let customMessages = JSON.parse(localStorage.getItem('pet_messages') || 'null') || {};
+
+    function loadMsgState(state) {
+      currentMsgState = state;
+      msgTabs.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.state === state);
+      });
+      const arr = customMessages[state] || [];
+      msgText.value = arr.join('\n');
+    }
+
+    msgTabs.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => loadMsgState(t.dataset.state));
+    });
+
+    msgText.addEventListener('input', () => {
+      const lines = msgText.value.split('\n').map(s => s.trim()).filter(Boolean);
+      customMessages[currentMsgState] = lines;
+      setStorage('pet_messages', JSON.stringify(customMessages));
+    });
+
+    loadMsgState('eat');
+
+    // ============================================================
+    // 9. 生日
+    // ============================================================
+    const inputBirthday = document.getElementById('input-birthday');
+    inputBirthday.value = localStorage.getItem('pet_birthday') || '';
+    inputBirthday.addEventListener('change', () => {
+      setStorage('pet_birthday', inputBirthday.value);
+    });
+
+    // ============================================================
+    // 10. 统计
+    // ============================================================
+    function renderStats() {
+      const stats = JSON.parse(localStorage.getItem('pet_stats') || '{}');
+      const firstSeen = stats.firstSeen || Date.now();
+      const days = Math.max(1, Math.floor((Date.now() - firstSeen) / (1000 * 60 * 60 * 24)));
+      document.getElementById('stat-days').textContent = days;
+      document.getElementById('stat-pet').textContent = stats.petCount || 0;
+      document.getElementById('stat-switch').textContent = stats.switchCount || 0;
+      document.getElementById('stat-sessions').textContent = stats.sessions || 0;
+    }
+    renderStats();
+    setInterval(renderStats, 2000);
+
+    // ============================================================
+    // 全部重置
+    // ============================================================
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      if (!confirm('确定要重置所有偏好设置和统计数据吗？此操作不可恢复。')) return;
+      const keys = [
+        'pet_size_scale', 'pet_opacity', 'pet_current_theme',
+        'pet_auto_actions_enabled', 'pet_action_frequency',
+        'pet_remember_position', 'pet_birthday',
+        'pet_schedule', 'pet_messages', 'pet_stats',
+      ];
+      keys.forEach(k => localStorage.removeItem(k));
+      // 通知主窗口重置统计
+      setStorage('pet_stats_request_reset', String(Date.now()));
+      alert('已重置。设置面板即将关闭，主窗口会立即应用新设置。');
+      getCurrentWindow().close();
+    });
+
+    // 关闭
     document.getElementById('btn-save').addEventListener('click', async () => {
       try {
         await getCurrentWindow().close();
       } catch (err) {
-        console.error('Failed to close window', err);
         window.close();
       }
     });

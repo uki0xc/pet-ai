@@ -7,25 +7,18 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <canvas id="pet-canvas" width="200" height="200"></canvas>
-    <img id="pet-webp" class="hidden" style="position: absolute; top: 0; left: 0; width: 200px; height: 200px; object-fit: contain; pointer-events: none; user-select: none;" />
+    <canvas id="pet-canvas" width="500" height="500"></canvas>
+    <img id="pet-webp" class="hidden" style="position: absolute; top: 0; left: 0; width: 500px; height: 500px; object-fit: contain; pointer-events: none; user-select: none;" />
     
-    <!-- Right-click context menu -->
+    <!-- Right-click context menu (内容由 JS 根据当前品种动态生成) -->
     <div id="context-menu" class="context-menu hidden">
       <div class="menu-header">🐱 桌宠菜单</div>
-      <div class="menu-grid">
-        <div class="menu-item" data-action="eat">🍗 吃饭</div>
-        <div class="menu-item" data-action="sleep">😴 睡觉</div>
-        <div class="menu-item" data-action="play">⚽ 玩耍</div>
-        <div class="menu-item" data-action="daze">😶 发呆</div>
-      </div>
+      <div id="menu-body"></div>
       <div class="menu-divider"></div>
       <div class="menu-grid">
-        <div class="menu-item" data-action="pet">💖 摸摸头</div>
-        <div class="menu-item" data-action="settings">⚙️ 高级设置</div>
+        <div class="menu-item" data-action="settings">⚙️ 设置</div>
+        <div class="menu-item menu-item-danger" data-action="quit">❌ 退出</div>
       </div>
-      <div class="menu-divider"></div>
-      <div class="menu-item menu-item-danger menu-item-full" data-action="quit">❌ 退出桌面宠物</div>
     </div>
 
     <!-- Floating status bubble -->

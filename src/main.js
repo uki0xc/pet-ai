@@ -11,7 +11,7 @@ const { listen } = window.__TAURI__.event;
 // Configuration
 // ============================================================
 
-const CANVAS_SIZE = 200;
+const CANVAS_SIZE = 500;
 const FRAME_DURATION = 200; // ms per animation frame (fast and fluid loop to eliminate slideshow stuttering feel)
 
 // Each sprite sheet is a 3x4 grid = 12 frames
@@ -20,36 +20,59 @@ const GRID_ROWS = 4;
 
 const STATES = {
   eat: { src: '/assets/oolong_eat.png', frames: 12, label: '吃饭中~' },
-  sleep: { src: '/assets/oolong_sleep.png', frames: 12, label: 'Zzz...' },
+  sleep: { src: '/assets/oolong_sleep.png', frames: 1, label: 'Zzz...', single: true },
   play: { src: '/assets/oolong_play.png', frames: 1, label: '玩耍中~', single: true },
   play2: { src: '/assets/oolong_play2.png', frames: 1, label: '玩耍中~', single: true },
   daze: { src: '/assets/oolong_daze.png', frames: 1, label: '发呆中...', single: true, scale: 1.35, marginTop: 0, marginX: 0 },
   daze2: { src: '/assets/oolong_daze2.png', frames: 1, label: '发呆中...', single: true, scale: 1.25, marginTop: 0, marginX: 0 },
+  gaze: { src: '/assets/oolong_daze.png', frames: 1, label: '注视中...', single: true, scale: 1.3, marginTop: 0, marginX: 0 },
 };
 
-// 初始载入时同步保存的自定义比例
-const initDaze = localStorage.getItem('pet_daze_scale');
-if (initDaze) STATES.daze.scale = parseFloat(initDaze);
-
-const initDaze2 = localStorage.getItem('pet_daze2_scale');
-if (initDaze2) STATES.daze2.scale = parseFloat(initDaze2);
-
-// 实时监听来自设置窗口的 storage 变更，实现无需刷新的即时缩放调整
-window.addEventListener('storage', (e) => {
-  if (e.key === 'pet_daze_scale') {
-    STATES.daze.scale = parseFloat(e.newValue || 1.35);
-  }
-  if (e.key === 'pet_daze2_scale') {
-    STATES.daze2.scale = parseFloat(e.newValue || 1.25);
-  }
-});
+// 各品种专属状态素材（覆盖默认 oolong 的图）。未列出的状态自动 fallback 到默认 STATES。
+const THEME_STATE_OVERRIDES = {
+  tiger: {
+    sleep: { src: '/assets/tiger_sleep.png', frames: 1, label: 'Zzz...', single: true },
+    daze: { src: '/assets/tiger_daze.png', frames: 1, label: '发呆中...', single: true, scale: 1.35, marginTop: 0, marginX: 0 },
+    daze2: { src: '/assets/tiger_daze.png', frames: 1, label: '发呆中...', single: true, scale: 1.35, marginTop: 0, marginX: 0 },
+    gaze: { src: '/assets/tiger_gaze.png', frames: 1, label: '注视中...', single: true, scale: 1.3, marginTop: 0, marginX: 0 },
+  },
+};
 
 // 多宠物品种切换支持
 const PET_THEMES = [
-  { id: 'oolong', name: '乌龙茶', filter: 'none', label: '乌龙茶' },
-  { id: 'tiger', name: '虎皮卷', filter: 'sepia(0.5) saturate(1.6) hue-rotate(-15deg) brightness(1.05)', label: '虎皮卷' },
-  { id: 'car', name: '小车', filter: 'grayscale(0.6) saturate(1.5) hue-rotate(190deg) brightness(0.95)', label: '小车' }
+  {
+    id: 'oolong',
+    name: '乌龙茶',
+    filter: 'none',
+    label: '乌龙茶',
+    menu: ['eat', 'sleep', 'play', 'daze', 'pet'],
+  },
+  {
+    id: 'tiger',
+    name: '虎皮卷',
+    filter: 'none',
+    label: '虎皮卷',
+    menu: ['sleep', 'daze', 'gaze', 'pet'],
+  },
+  {
+    id: 'car',
+    name: '小车',
+    filter: 'grayscale(0.6) saturate(1.5) hue-rotate(190deg) brightness(0.95)',
+    label: '小车',
+    menu: ['eat', 'sleep', 'play', 'daze', 'pet'],
+  },
 ];
+
+// 菜单项配置：图标 + 标签
+const MENU_ITEMS = {
+  eat:      { icon: '🍗', label: '吃饭' },
+  sleep:    { icon: '😴', label: '睡觉' },
+  play:     { icon: '⚽', label: '玩耍' },
+  daze:     { icon: '😶', label: '发呆' },
+  gaze:     { icon: '👀', label: '注视' },
+  pet:      { icon: '💖', label: '摸摸头' },
+  settings: { icon: '⚙️', label: '设置' },
+};
 
 let currentPetThemeIndex = 0;
 const savedTheme = localStorage.getItem('pet_current_theme');
@@ -67,12 +90,123 @@ window.addEventListener('storage', (e) => {
   }
 });
 
+// 用户可手动调节的整体桌宠尺寸（50% ~ 200%）
+let petScale = parseFloat(localStorage.getItem('pet_size_scale')) || 1.0;
+window.addEventListener('storage', (e) => {
+  if (e.key === 'pet_size_scale') {
+    petScale = parseFloat(e.newValue) || 1.0;
+  }
+});
+
+// ============================================================
+// 用户偏好设置（持久化存于 localStorage，跨窗口同步）
+// ============================================================
+
+const userSettings = {
+  autoActions: localStorage.getItem('pet_auto_actions_enabled') !== 'false', // 默认开
+  actionFrequency: localStorage.getItem('pet_action_frequency') || 'normal', // calm | normal | active
+  opacity: parseFloat(localStorage.getItem('pet_opacity')) || 1.0,
+  birthday: localStorage.getItem('pet_birthday') || '',
+  customSchedule: JSON.parse(localStorage.getItem('pet_schedule') || 'null'),
+  customMessages: JSON.parse(localStorage.getItem('pet_messages') || 'null'),
+};
+
+// 应用透明度
+function applyOpacity() {
+  document.documentElement.style.opacity = String(userSettings.opacity);
+}
+
+// 统一的设置变更应用函数
+function applySetting(key, value) {
+  switch (key) {
+    case 'pet_size_scale':
+      petScale = parseFloat(value) || 1.0;
+      break;
+    case 'pet_current_theme': {
+      const idx = PET_THEMES.findIndex(t => t.id === value);
+      if (idx !== -1) {
+        currentPetThemeIndex = idx;
+        showBubble(`已切换至: ${PET_THEMES[idx].name} 🐱`);
+      }
+      break;
+    }
+    case 'pet_auto_actions_enabled':
+      userSettings.autoActions = value !== 'false';
+      break;
+    case 'pet_action_frequency':
+      userSettings.actionFrequency = value || 'normal';
+      break;
+    case 'pet_opacity':
+      userSettings.opacity = parseFloat(value) || 1.0;
+      applyOpacity();
+      break;
+    case 'pet_birthday':
+      userSettings.birthday = value || '';
+      break;
+    case 'pet_schedule':
+      try { userSettings.customSchedule = JSON.parse(value || 'null'); } catch (e) {}
+      break;
+    case 'pet_messages':
+      try { userSettings.customMessages = JSON.parse(value || 'null'); } catch (e) {}
+      break;
+    case 'pet_stats_request_reset':
+      resetStats();
+      break;
+  }
+}
+
+// 监听 localStorage（同进程 / 同 webview 间生效）
+window.addEventListener('storage', (e) => applySetting(e.key, e.newValue));
+
+// 监听 Tauri 事件（跨 webview 同步，更稳定）
+listen('settings:changed', (event) => {
+  const { key, value } = event.payload || {};
+  if (key) applySetting(key, value);
+}).catch((e) => console.error('settings listen failed', e));
+
+// 行为频率映射（最小延迟 ~ 最大延迟 ms）
+const FREQUENCY_RANGES = {
+  calm:   [120000, 300000],   // 安静：2-5 分钟
+  normal: [15000,  45000],    // 默认：15-45 秒
+  active: [5000,   15000],    // 活跃：5-15 秒
+};
+
+// ============================================================
+// 统计数据
+// ============================================================
+
+const stats = (() => {
+  const raw = localStorage.getItem('pet_stats');
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) {}
+  }
+  return { firstSeen: Date.now(), petCount: 0, switchCount: 0, sessions: 0 };
+})();
+
+stats.sessions = (stats.sessions || 0) + 1;
+
+function saveStats() {
+  localStorage.setItem('pet_stats', JSON.stringify(stats));
+}
+
+function resetStats() {
+  stats.firstSeen = Date.now();
+  stats.petCount = 0;
+  stats.switchCount = 0;
+  stats.sessions = 1;
+  saveStats();
+}
+
+saveStats();
+
 function switchNextPet() {
   currentPetThemeIndex = (currentPetThemeIndex + 1) % PET_THEMES.length;
   const currentTheme = PET_THEMES[currentPetThemeIndex];
   localStorage.setItem('pet_current_theme', currentTheme.id);
   showBubble(`换宠成功: ${currentTheme.name} 🎉`);
   console.log(`🐱 切换宠物至: ${currentTheme.name}`);
+  stats.switchCount = (stats.switchCount || 0) + 1;
+  saveStats();
 }
 
 // Random messages for each state
@@ -83,6 +217,7 @@ const MESSAGES = {
   play2: ['看我抓蝴蝶！', '冲呀~', '毛线球真好玩！', '扑击！', '喵喵拳！', '精力充沛喵！'],
   daze: ['发呆中...', '思考猫生...', '我是谁，我在哪？', 'O_o', '放空中~', '在看什么呢？'],
   daze2: ['发呆中...', '思考猫生...', '我是谁，我在哪？', 'O_o', '放空中~', '在看什么呢？'],
+  gaze: ['👀 我在看你...', '别动，我在观察~', '凝视ing', '...嘿', '主人在干嘛？', '👁️_👁️'],
   pet: ['好舒服喵~', '嘿嘿~', '还要还要！', '❤️', '呼噜呼噜~', '喵呜~'],
 };
 
@@ -97,7 +232,6 @@ let lastFrameTime = 0;
 // Sprite sheets (one per state)
 const spriteSheets = {};
 let spritesLoaded = 0;
-const totalSprites = Object.keys(STATES).length;
 
 let autoActionTimer = null;
 
@@ -115,7 +249,22 @@ const statusText = document.getElementById('status-text');
 // ============================================================
 
 function loadAllSprites() {
+  // 收集所有需要加载的 (key, config) 对：默认状态用 state 名作 key，主题专属覆盖用 themeId:state 作 key
+  const tasks = [];
   for (const [state, config] of Object.entries(STATES)) {
+    tasks.push({ key: state, config });
+  }
+  for (const [themeId, overrides] of Object.entries(THEME_STATE_OVERRIDES)) {
+    for (const [state, config] of Object.entries(overrides)) {
+      tasks.push({ key: `${themeId}:${state}`, config });
+    }
+  }
+
+  // 重置加载计数
+  spritesLoaded = 0;
+  const total = tasks.length;
+
+  tasks.forEach(({ key, config }) => {
     const img = new Image();
     img.onload = () => {
       // Process image to remove pure white background via flood-fill
@@ -130,12 +279,10 @@ function loadAllSprites() {
       const width = img.width;
       const height = img.height;
 
-      // Check if pixel is near-white background
       function isBg(idx) {
         return data[idx] > 235 && data[idx + 1] > 235 && data[idx + 2] > 235 && data[idx + 3] > 0;
       }
 
-      // Flood fill from all edges
       const stack = [];
       const visited = new Uint8Array(width * height);
       for (let x = 0; x < width; x++) { stack.push([x, 0]); stack.push([x, height - 1]); }
@@ -146,11 +293,9 @@ function loadAllSprites() {
         const i = y * width + x;
         if (visited[i]) continue;
         visited[i] = 1;
-
         const pIdx = i * 4;
         if (isBg(pIdx)) {
-          data[pIdx + 3] = 0; // Set transparent
-
+          data[pIdx + 3] = 0;
           if (x > 0) stack.push([x - 1, y]);
           if (x < width - 1) stack.push([x + 1, y]);
           if (y > 0) stack.push([x, y - 1]);
@@ -159,26 +304,35 @@ function loadAllSprites() {
       }
       offCtx.putImageData(imgData, 0, 0);
 
-      spriteSheets[state] = {
+      spriteSheets[key] = {
         img: offCanvas,
+        config,
         frameWidth: config.single ? img.width : img.width / GRID_COLS,
         frameHeight: config.single ? img.height : img.height / GRID_ROWS,
       };
       spritesLoaded++;
-      console.log(`✅ Loaded ${state}`);
-      if (spritesLoaded === totalSprites) {
+      console.log(`✅ Loaded ${key}`);
+      if (spritesLoaded === total) {
         requestAnimationFrame(gameLoop);
       }
     };
     img.onerror = (e) => {
-      console.error(`Failed to load sprite for ${state}`, e);
+      console.error(`Failed to load sprite for ${key}`, e);
       spritesLoaded++;
-      if (spritesLoaded === totalSprites) {
+      if (spritesLoaded === total) {
         requestAnimationFrame(gameLoop);
       }
     };
     img.src = config.src;
-  }
+  });
+}
+
+// 根据当前 theme 和 state 获取 sprite sheet（如果有 theme override 优先用，否则 fallback 到默认）
+function getActiveSheet(state) {
+  const themeId = PET_THEMES[currentPetThemeIndex]?.id;
+  const overrideKey = `${themeId}:${state}`;
+  if (spriteSheets[overrideKey]) return spriteSheets[overrideKey];
+  return spriteSheets[state];
 }
 
 // ============================================================
@@ -195,7 +349,7 @@ function getFrameCoords(frameIndex) {
 function drawFrame(timestamp) {
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-  const sheet = spriteSheets[currentState];
+  const sheet = getActiveSheet(currentState);
   if (!sheet) {
     drawFallbackPet(timestamp);
     return;
@@ -209,16 +363,16 @@ function drawFrame(timestamp) {
   const sx = col * sheet.frameWidth;
   const sy = row * sheet.frameHeight;
 
-  // Draw subtle stationary floor shadow
+  // Draw subtle stationary floor shadow (scaled to match pet size)
   ctx.save();
   ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
   ctx.beginPath();
-  ctx.ellipse(CANVAS_SIZE / 2, CANVAS_SIZE - 14, 55, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(CANVAS_SIZE / 2, CANVAS_SIZE - 14, 55 * petScale, 8 * petScale, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
   // Calculate asymmetric crop margins to ensure pure illustration edges
-  const config = STATES[currentState] || {};
+  const config = sheet.config || STATES[currentState] || {};
   const marginTop = config.marginTop !== undefined ? config.marginTop : 30;
   const marginBottom = config.marginBottom !== undefined ? config.marginBottom : 2;
   const marginX = config.marginX !== undefined ? config.marginX : 12;
@@ -229,7 +383,7 @@ function drawFrame(timestamp) {
   const actualSy = sy + marginTop;
 
   // Calculate draw dimensions preserving cropped aspect ratio
-  const maxDrawSize = 170;
+  const maxDrawSize = 170 * petScale;
   let dw = maxDrawSize;
   let dh = maxDrawSize;
 
@@ -315,10 +469,13 @@ function drawFrame(timestamp) {
       const alpha = Math.sin(pPhase * Math.PI); // 淡入淡出
       ctx.globalAlpha = alpha * 0.7;
 
-      const zx = offsetX + dw * 0.6 + Math.sin(pPhase * Math.PI * 2) * 6 + i * 4;
-      const zy = offsetY + dh * 0.45 - pPhase * 40;
+      // Zzz 粒子从猫咪头顶附近升起，不再覆盖在身体上
+      const baseX = offsetX + dw * 0.65;
+      const baseY = offsetY + dh * 0.15; // 头顶略偏下，避免飘太远
+      const zx = baseX + Math.sin(pPhase * Math.PI * 2) * 8 + i * 4;
+      const zy = baseY - pPhase * 32; // 向上飘 32px
 
-      ctx.font = i === 2 ? 'bold 15px sans-serif' : 'bold 11px sans-serif';
+      ctx.font = i === 2 ? 'bold 17px sans-serif' : 'bold 12px sans-serif';
       ctx.fillText(i === 2 ? 'Z' : 'z', zx, zy);
     }
     ctx.restore();
@@ -501,7 +658,14 @@ function setUserState(baseAction) {
 }
 
 function showRandomMessage(state) {
-  const msgs = MESSAGES[state] || MESSAGES.eat;
+  // 用户自定义文案优先（同 state 至少一条非空才生效）
+  const custom = userSettings.customMessages && userSettings.customMessages[state];
+  let msgs;
+  if (custom && Array.isArray(custom) && custom.filter(m => m && m.trim()).length > 0) {
+    msgs = custom.filter(m => m && m.trim());
+  } else {
+    msgs = MESSAGES[state] || MESSAGES.eat;
+  }
   const msg = msgs[Math.floor(Math.random() * msgs.length)];
   showBubble(msg);
 }
@@ -514,6 +678,22 @@ function showRandomMessage(state) {
 
 function getStateByTime() {
   const hour = new Date().getHours();
+
+  // 用户自定义作息表优先：[{startHour, endHour, state}]
+  const schedule = userSettings.customSchedule;
+  if (Array.isArray(schedule) && schedule.length > 0) {
+    for (const slot of schedule) {
+      const start = slot.startHour;
+      const end = slot.endHour;
+      if (typeof start !== 'number' || typeof end !== 'number') continue;
+      // 跨午夜段（如 22-7）支持
+      const inSlot = start <= end
+        ? (hour >= start && hour < end)
+        : (hour >= start || hour < end);
+      if (inSlot && slot.state) return slot.state;
+    }
+  }
+
   if (hour >= 0 && hour < 7) return 'sleep';           // 深夜/凌晨 睡觉
   if (hour >= 7 && hour < 9) return 'eat';             // 早饭时间
   if (hour >= 9 && hour < 12) return 'play';           // 上午 玩耍
@@ -580,8 +760,20 @@ function startAutoActions() {
 }
 
 function scheduleNextAction() {
-  const delay = 15000 + Math.random() * 30000;
+  // 用户禁用自动行为时彻底跳过调度
+  if (!userSettings.autoActions) {
+    autoActionTimer = setTimeout(scheduleNextAction, 30000); // 每 30 秒重新检查一次开关状态
+    return;
+  }
+
+  const range = FREQUENCY_RANGES[userSettings.actionFrequency] || FREQUENCY_RANGES.normal;
+  const delay = range[0] + Math.random() * (range[1] - range[0]);
+
   autoActionTimer = setTimeout(() => {
+    if (!userSettings.autoActions) {
+      scheduleNextAction();
+      return;
+    }
     if (userLockEndTime > Date.now()) {
       // 处于 10 分钟维持期内，跳过随机动作改变，继续等待下一次调度
       scheduleNextAction();
@@ -594,8 +786,16 @@ function scheduleNextAction() {
     } else {
       // 变体视为同一类，随机时不重复切换同类
       const currentBase = (currentState === 'play' || currentState === 'play2') ? 'play' : (currentState === 'daze' || currentState === 'daze2') ? 'daze' : currentState;
-      const actions = ['eat', 'sleep', 'play', 'daze'];
-      const availableActions = actions.filter(a => a !== currentBase);
+      // 仅从当前品种的菜单状态里选随机动作（确保该品种有专属画面或合理 fallback）
+      const theme = PET_THEMES[currentPetThemeIndex];
+      const themeStates = (theme && theme.menu)
+        ? theme.menu.filter(s => ['eat', 'sleep', 'play', 'daze', 'gaze'].includes(s))
+        : ['eat', 'sleep', 'play', 'daze'];
+      const availableActions = themeStates.filter(a => a !== currentBase);
+      if (availableActions.length === 0) {
+        scheduleNextAction();
+        return;
+      }
       const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
       setState(randomAction);
     }
@@ -620,9 +820,9 @@ async function openSettingsWindow() {
     const settingsWin = new WebviewWindow('settings', {
       url: 'settings.html',
       title: 'River Pet 高级设置',
-      width: 380,
-      height: 560,
-      resizable: false,
+      width: 440,
+      height: 760,
+      resizable: true,
       decorations: true,
       center: true,
       alwaysOnTop: true
@@ -639,11 +839,39 @@ async function openSettingsWindow() {
   }
 }
 
+function renderContextMenu() {
+  const body = document.getElementById('menu-body');
+  if (!body) return;
+  const theme = PET_THEMES[currentPetThemeIndex];
+  const items = (theme && theme.menu) || ['eat', 'sleep', 'play', 'daze', 'pet', 'settings'];
+
+  // 双列网格容纳所有项；单数则最后一项独占整行
+  const isOdd = items.length % 2 === 1;
+  let html = '<div class="menu-grid">';
+  items.forEach((id, idx) => {
+    const item = MENU_ITEMS[id];
+    if (!item) return;
+    // 最后一项且总数为奇数：跨双列
+    const lastSpan = isOdd && idx === items.length - 1
+      ? ' style="grid-column: 1 / span 2;"'
+      : '';
+    html += `<div class="menu-item" data-action="${id}"${lastSpan}>${item.icon} ${item.label}</div>`;
+  });
+  html += '</div>';
+  body.innerHTML = html;
+}
+
 function showContextMenu(x, y) {
+  // 每次打开前根据当前品种重新生成菜单内容
+  renderContextMenu();
   contextMenu.classList.remove('hidden');
 
   const menuW = 186;
-  const menuH = 168; // 完美匹配双列高度，彻底告别底部截断
+  // 高度根据菜单项数量动态估算
+  const theme = PET_THEMES[currentPetThemeIndex];
+  const itemCount = (theme && theme.menu) ? theme.menu.length : 6;
+  const rows = Math.ceil(itemCount / 2) + 1; // +1 是退出按钮独占一行
+  const menuH = 24 + rows * 28 + 20; // 大致估算，避免被屏幕底部截断
   let mx = x;
   let my = y;
   if (mx + menuW > CANVAS_SIZE) mx = CANVAS_SIZE - menuW;
@@ -659,32 +887,34 @@ function hideContextMenu() {
   contextMenu.classList.add('hidden');
 }
 
-document.querySelectorAll('.menu-item').forEach(item => {
-  item.addEventListener('click', (e) => {
-    const action = e.currentTarget.dataset.action;
-    hideContextMenu();
+// 事件代理：把点击委托到 contextMenu，无论菜单内容怎么变都能响应
+contextMenu.addEventListener('click', (e) => {
+  const target = e.target.closest('.menu-item');
+  if (!target) return;
+  const action = target.dataset.action;
+  hideContextMenu();
 
-    switch (action) {
-      case 'eat':
-      case 'sleep':
-      case 'play':
-      case 'daze':
-        setUserState(action);
-        break;
-      case 'switchPet':
-        switchNextPet();
-        break;
-      case 'settings':
-        openSettingsWindow();
-        break;
-      case 'pet':
-        doPetting();
-        break;
-      case 'quit':
-        getCurrentWindow().close();
-        break;
-    }
-  });
+  switch (action) {
+    case 'eat':
+    case 'sleep':
+    case 'play':
+    case 'daze':
+    case 'gaze':
+      setUserState(action);
+      break;
+    case 'switchPet':
+      switchNextPet();
+      break;
+    case 'settings':
+      openSettingsWindow();
+      break;
+    case 'pet':
+      doPetting();
+      break;
+    case 'quit':
+      getCurrentWindow().close();
+      break;
+  }
 });
 
 // ============================================================
@@ -698,6 +928,12 @@ function showBubble(message, duration = 3000) {
 
   statusText.textContent = message;
   statusBubble.classList.remove('hidden');
+
+  // 动态贴在猫咪头顶上方 12px。猫咪绘制高度约 170 * petScale，底部对齐 CANVAS_SIZE - 14
+  const petHeight = 170 * petScale;
+  const petTop = (CANVAS_SIZE - 14) - petHeight + 6;
+  const bubbleBottom = CANVAS_SIZE - petTop + 12;
+  statusBubble.style.bottom = bubbleBottom + 'px';
 
   statusBubble.style.animation = 'none';
   statusBubble.offsetHeight;
@@ -718,6 +954,9 @@ function doPetting() {
   for (let i = 0; i < 6; i++) {
     setTimeout(() => spawnHeart(), i * 120);
   }
+
+  stats.petCount = (stats.petCount || 0) + 1;
+  saveStats();
 }
 
 function spawnHeart() {
@@ -725,8 +964,15 @@ function spawnHeart() {
   const heart = document.createElement('div');
   heart.className = 'heart-particle';
   heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-  heart.style.left = (60 + Math.random() * 80) + 'px';
-  heart.style.top = (50 + Math.random() * 40) + 'px';
+
+  // 心形粒子从猫咪上半身位置浮起，跟随尺寸缩放
+  const petHeight = 170 * petScale;
+  const petWidth = 170 * petScale;
+  const petLeft = (CANVAS_SIZE - petWidth) / 2;
+  const petTop = (CANVAS_SIZE - 14) - petHeight + 6;
+
+  heart.style.left = (petLeft + petWidth * 0.25 + Math.random() * petWidth * 0.5) + 'px';
+  heart.style.top = (petTop + petHeight * 0.2 + Math.random() * petHeight * 0.3) + 'px';
   document.body.appendChild(heart);
 
   setTimeout(() => heart.remove(), 1200);
@@ -772,15 +1018,120 @@ window.addEventListener('blur', () => {
 });
 
 // ============================================================
-// Initialization
+// 生日守望
 // ============================================================
 
+function startBirthdayWatcher() {
+  let lastTriggeredDate = '';
+
+  const check = () => {
+    if (!userSettings.birthday) return;
+    const today = new Date();
+    const md = `${today.getMonth() + 1}-${today.getDate()}`;
+    const todayKey = `${today.getFullYear()}-${md}`;
+
+    // 取生日的"月-日"部分
+    let birthdayMd = '';
+    try {
+      const bd = new Date(userSettings.birthday);
+      if (!isNaN(bd.getTime())) {
+        birthdayMd = `${bd.getMonth() + 1}-${bd.getDate()}`;
+      }
+    } catch (e) {}
+
+    if (birthdayMd && birthdayMd === md && lastTriggeredDate !== todayKey) {
+      lastTriggeredDate = todayKey;
+      // 庆祝
+      showBubble('🎂 生日快乐！喵呜~ 今天有蛋糕吗？', 6000);
+      for (let i = 0; i < 12; i++) {
+        setTimeout(() => spawnHeart(), i * 150);
+      }
+    }
+  };
+
+  check();
+  // 每 5 分钟检查一次（应付跨日 + 临时改生日的情况）
+  setInterval(check, 5 * 60 * 1000);
+}
+
+// ============================================================
+// Pixel-Perfect Click-Through (仅猫咪本体响应鼠标)
+// ============================================================
+// 通过轮询鼠标位置 + 采样 canvas 像素 alpha 通道，决定窗口是否忽略鼠标事件。
+// 当鼠标悬停在透明像素（猫咪外的空白区域）时，鼠标事件穿透到下层应用；
+// 当鼠标进入猫咪本体（含气泡和右键菜单等可交互 DOM）时，恢复正常事件接收。
+
+let cursorIgnoreState = false; // 当前窗口是否处于 ignore 模式
+
+async function startCursorHitTesting() {
+  let pollHandle = null;
+
+  const poll = async () => {
+    try {
+      // 拖拽中或右键菜单展开时一律保持可交互，避免中断
+      const menuOpen = !contextMenu.classList.contains('hidden');
+      if (isDragging || menuOpen) {
+        if (cursorIgnoreState) {
+          await invoke('set_ignore_cursor', { ignore: false });
+          cursorIgnoreState = false;
+        }
+        return;
+      }
+
+      const [cx, cy] = await invoke('get_cursor_pos');
+
+      // 鼠标在窗口外时不需要处理
+      if (cx < 0 || cy < 0 || cx >= CANVAS_SIZE || cy >= CANVAS_SIZE) {
+        return;
+      }
+
+      // 检查鼠标位置是否落在 DOM UI 元素（气泡、菜单、心形）上 —— 这些必须可交互
+      const hoveredEl = document.elementFromPoint(cx, cy);
+      const onUI = hoveredEl && (
+        hoveredEl.closest('.context-menu') ||
+        hoveredEl.closest('.status-bubble') ||
+        hoveredEl.closest('.heart-particle')
+      );
+
+      let shouldIgnore = false;
+
+      if (onUI) {
+        shouldIgnore = false;
+      } else {
+        // 采样 canvas 该位置的 alpha 通道
+        try {
+          const pixel = ctx.getImageData(Math.floor(cx), Math.floor(cy), 1, 1).data;
+          // alpha < 阈值视为透明，鼠标穿透
+          shouldIgnore = pixel[3] < 10;
+        } catch (e) {
+          shouldIgnore = false;
+        }
+      }
+
+      if (shouldIgnore !== cursorIgnoreState) {
+        await invoke('set_ignore_cursor', { ignore: shouldIgnore });
+        cursorIgnoreState = shouldIgnore;
+      }
+    } catch (e) {
+      // 命令调用偶发失败可忽略
+    }
+  };
+
+  // 60ms 轮询：足够流畅响应鼠标移动，性能开销极低
+  pollHandle = setInterval(poll, 60);
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
-  console.log('🐱 Desktop Pet initializing... (Codex style fat orange cat!)');
+  console.log('🐱 River Pet initializing...');
+
+  // 应用用户偏好（透明度等）
+  applyOpacity();
+
   loadAllSprites();
   startTimeBasedBehavior();
   startPlayRotation();
   startAutoActions();
+  startBirthdayWatcher();
 
   // 显式初始化透明窗口接收鼠标事件状态，确保 macOS 和 Windows 均可正常响应点击和拖拽。
   // 彻底移除高频 mousemove 动态修改 ignore 状态的逻辑，避免在按住拖拽时底层窗口属性被不断重置中断。
@@ -793,6 +1144,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch (e) {
     console.error('Init cursor error:', e);
   }
+
+  // 启动像素级命中检测：仅猫咪不透明像素响应鼠标，背景透明区域穿透
+  startCursorHitTesting();
 
   // 监听来自托盘菜单的事件（Windows 任务栏 / macOS 菜单栏）
   try {
