@@ -3,7 +3,9 @@
 // ============================================================
 
 const { invoke } = window.__TAURI__.core;
-const { getCurrentWindow } = window.__TAURI__.window;
+const { getCurrentWindow, Window, getAllWindows } = window.__TAURI__.window;
+const { WebviewWindow } = window.__TAURI__.webviewWindow;
+const { listen } = window.__TAURI__.event;
 
 // ============================================================
 // Configuration
@@ -17,11 +19,61 @@ const GRID_COLS = 3;
 const GRID_ROWS = 4;
 
 const STATES = {
-  eat: { src: '/assets/cat_eat.png', frames: 12, label: '吃饭中~' },
-  sleep: { src: '/assets/cat_sleep.png', frames: 12, label: 'Zzz...' },
-  play: { src: '/assets/cat_play.png', frames: 1, label: '玩耍中~', single: true },
-  play2: { src: '/assets/cat_play2.png', frames: 1, label: '玩耍中~', single: true },
+  eat: { src: '/assets/oolong_eat.png', frames: 12, label: '吃饭中~' },
+  sleep: { src: '/assets/oolong_sleep.png', frames: 12, label: 'Zzz...' },
+  play: { src: '/assets/oolong_play.png', frames: 1, label: '玩耍中~', single: true },
+  play2: { src: '/assets/oolong_play2.png', frames: 1, label: '玩耍中~', single: true },
+  daze: { src: '/assets/oolong_daze.png', frames: 1, label: '发呆中...', single: true, scale: 1.35, marginTop: 0, marginX: 0 },
+  daze2: { src: '/assets/oolong_daze2.png', frames: 1, label: '发呆中...', single: true, scale: 1.25, marginTop: 0, marginX: 0 },
 };
+
+// 初始载入时同步保存的自定义比例
+const initDaze = localStorage.getItem('pet_daze_scale');
+if (initDaze) STATES.daze.scale = parseFloat(initDaze);
+
+const initDaze2 = localStorage.getItem('pet_daze2_scale');
+if (initDaze2) STATES.daze2.scale = parseFloat(initDaze2);
+
+// 实时监听来自设置窗口的 storage 变更，实现无需刷新的即时缩放调整
+window.addEventListener('storage', (e) => {
+  if (e.key === 'pet_daze_scale') {
+    STATES.daze.scale = parseFloat(e.newValue || 1.35);
+  }
+  if (e.key === 'pet_daze2_scale') {
+    STATES.daze2.scale = parseFloat(e.newValue || 1.25);
+  }
+});
+
+// 多宠物品种切换支持
+const PET_THEMES = [
+  { id: 'oolong', name: '乌龙茶', filter: 'none', label: '乌龙茶' },
+  { id: 'tiger', name: '虎皮卷', filter: 'sepia(0.5) saturate(1.6) hue-rotate(-15deg) brightness(1.05)', label: '虎皮卷' },
+  { id: 'car', name: '小车', filter: 'grayscale(0.6) saturate(1.5) hue-rotate(190deg) brightness(0.95)', label: '小车' }
+];
+
+let currentPetThemeIndex = 0;
+const savedTheme = localStorage.getItem('pet_current_theme');
+if (savedTheme) {
+  const idx = PET_THEMES.findIndex(t => t.id === savedTheme);
+  if (idx !== -1) currentPetThemeIndex = idx;
+}
+window.addEventListener('storage', (e) => {
+  if (e.key === 'pet_current_theme') {
+    const idx = PET_THEMES.findIndex(t => t.id === e.newValue);
+    if (idx !== -1) {
+      currentPetThemeIndex = idx;
+      showBubble(`已切换至: ${PET_THEMES[idx].name} 🐱`);
+    }
+  }
+});
+
+function switchNextPet() {
+  currentPetThemeIndex = (currentPetThemeIndex + 1) % PET_THEMES.length;
+  const currentTheme = PET_THEMES[currentPetThemeIndex];
+  localStorage.setItem('pet_current_theme', currentTheme.id);
+  showBubble(`换宠成功: ${currentTheme.name} 🎉`);
+  console.log(`🐱 切换宠物至: ${currentTheme.name}`);
+}
 
 // Random messages for each state
 const MESSAGES = {
@@ -29,6 +81,8 @@ const MESSAGES = {
   sleep: ['Zzz...', '做了个好梦...', '别吵...', '(˘ω˘)', '五分钟后叫我...'],
   play: ['看我抓蝴蝶！', '冲呀~', '毛线球真好玩！', '扑击！', '喵喵拳！', '精力充沛喵！'],
   play2: ['看我抓蝴蝶！', '冲呀~', '毛线球真好玩！', '扑击！', '喵喵拳！', '精力充沛喵！'],
+  daze: ['发呆中...', '思考猫生...', '我是谁，我在哪？', 'O_o', '放空中~', '在看什么呢？'],
+  daze2: ['发呆中...', '思考猫生...', '我是谁，我在哪？', 'O_o', '放空中~', '在看什么呢？'],
   pet: ['好舒服喵~', '嘿嘿~', '还要还要！', '❤️', '呼噜呼噜~', '喵呜~'],
 };
 
@@ -164,9 +218,10 @@ function drawFrame(timestamp) {
   ctx.restore();
 
   // Calculate asymmetric crop margins to ensure pure illustration edges
-  const marginTop = 30;
-  const marginBottom = 2;
-  const marginX = 12;
+  const config = STATES[currentState] || {};
+  const marginTop = config.marginTop !== undefined ? config.marginTop : 30;
+  const marginBottom = config.marginBottom !== undefined ? config.marginBottom : 2;
+  const marginX = config.marginX !== undefined ? config.marginX : 12;
 
   const sw = sheet.frameWidth - marginX * 2;
   const sh = sheet.frameHeight - marginTop - marginBottom;
@@ -190,6 +245,12 @@ function drawFrame(timestamp) {
 
   ctx.save();
 
+  // 应用宠物角色主题滤镜（零开销秒换不同品种）
+  const currentTheme = PET_THEMES[currentPetThemeIndex];
+  if (currentTheme && currentTheme.filter !== 'none') {
+    ctx.filter = currentTheme.filter;
+  }
+
   // Add a soft white glow so dark outlines and ZZZs stand out beautifully
   ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
   ctx.shadowBlur = 8;
@@ -198,6 +259,12 @@ function drawFrame(timestamp) {
   const pivotX = offsetX + dw / 2;
   const pivotY = offsetY + dh;
   ctx.translate(pivotX, pivotY);
+
+  // 如果当前状态配置了自定义缩放比例，应用该缩放（以底部为锚点向上向外放大）
+  const customScale = config.scale || 1.0;
+  if (customScale !== 1.0) {
+    ctx.scale(customScale, customScale);
+  }
 
   // 代码级 60FPS 物理驱动算法
   if (currentState === 'sleep') {
@@ -217,6 +284,12 @@ function drawFrame(timestamp) {
     const pounceY = 1 + Math.abs(Math.sin(timestamp / 350)) * 0.015; // 放慢弹跳节奏
     ctx.rotate(playTilt);
     ctx.scale(1, pounceY);
+  } else if (currentState === 'daze' || currentState === 'daze2') {
+    // 发呆时极其缓慢轻微的呼吸起伏与微微发愣摆动
+    const dazeTilt = Math.sin(timestamp / 800) * 0.008;
+    const dazeBreatheY = 1 + Math.sin(timestamp / 600) * 0.01;
+    ctx.rotate(dazeTilt);
+    ctx.scale(1, dazeBreatheY);
   }
 
   // 绘制单张高清图片（相对于新的基准原点）
@@ -383,14 +456,48 @@ function gameLoop(timestamp) {
 // State Management
 // ============================================================
 
+let userLockEndTime = 0;
+
 function setState(newState) {
-  // play 状态统一走当前变体
+  // 如果处于用户指定锁定维持期内，拒绝外部/后台定时自动触发的状态改变
+  if (userLockEndTime > Date.now()) return;
+
+  // 状态统一走当前变体
   if (newState === 'play') newState = currentPlayVariant;
+  if (newState === 'daze') newState = currentDazeVariant;
   if (currentState === newState) return;
   currentState = newState;
   currentFrame = 0;
   lastFrameTime = 0;
   showRandomMessage(newState);
+}
+
+function setUserState(baseAction) {
+  let targetState = baseAction;
+
+  if (baseAction === 'play') {
+    if (currentState === 'play' || currentState === 'play2') {
+      // 如果当前已经是玩耍状态，再次点击右键菜单直接切换到下一张图片（变体）
+      currentPlayVariant = currentState === 'play' ? 'play2' : 'play';
+    }
+    targetState = currentPlayVariant;
+  } else if (baseAction === 'daze') {
+    if (currentState === 'daze' || currentState === 'daze2') {
+      // 如果当前已经是发呆状态，再次点击右键菜单直接切换到另一张图片（变体）
+      currentDazeVariant = currentState === 'daze' ? 'daze2' : 'daze';
+    }
+    targetState = currentDazeVariant;
+  }
+
+  // 手动切换状态，更新当前状态与画面帧
+  currentState = targetState;
+  currentFrame = 0;
+  lastFrameTime = 0;
+  showRandomMessage(targetState);
+
+  // 切换后的状态维持 10 分钟（屏蔽自动切换、整点覆盖与变体轮换）
+  userLockEndTime = Date.now() + 10 * 60 * 1000;
+  console.log(`🔒 用户手动选择状态 ${targetState}，锁定维持 10 分钟`);
 }
 
 function showRandomMessage(state) {
@@ -423,6 +530,8 @@ function startTimeBasedBehavior() {
 
   // 每分钟检查一次时间，到整点时切换
   setInterval(() => {
+    if (userLockEndTime > Date.now()) return; // 处于 10 分钟维持期内，跳过时间检查覆盖
+
     const now = new Date();
     if (now.getMinutes() === 0) {
       const timeState = getStateByTime();
@@ -439,19 +548,25 @@ function startTimeBasedBehavior() {
 
 
 // ============================================================
-// Play variant rotation (every 10 minutes)
+// Play variant rotation
 // ============================================================
 
-// 当前 play 变体：'play' 或 'play2'
+// 当前变体
 let currentPlayVariant = 'play';
+let currentDazeVariant = 'daze';
 
 function startPlayRotation() {
   setInterval(() => {
+    if (userLockEndTime > Date.now()) return; // 处于 10 分钟维持期内，锁定特定变体画面不自动轮换
+
     // 切换变体
     currentPlayVariant = currentPlayVariant === 'play' ? 'play2' : 'play';
-    // 如果当前正在 play 状态，立即切换到新变体
+    currentDazeVariant = currentDazeVariant === 'daze' ? 'daze2' : 'daze';
+    // 如果当前正在相应状态，立即切换到新变体
     if (currentState === 'play' || currentState === 'play2') {
       currentState = currentPlayVariant;
+    } else if (currentState === 'daze' || currentState === 'daze2') {
+      currentState = currentDazeVariant;
     }
   }, 30 * 1000); // 30 秒轮换一次
 }
@@ -467,13 +582,19 @@ function startAutoActions() {
 function scheduleNextAction() {
   const delay = 15000 + Math.random() * 30000;
   autoActionTimer = setTimeout(() => {
+    if (userLockEndTime > Date.now()) {
+      // 处于 10 分钟维持期内，跳过随机动作改变，继续等待下一次调度
+      scheduleNextAction();
+      return;
+    }
+
     const hour = new Date().getHours();
     if (hour >= 0 && hour < 7 || hour >= 22) {
       setState('sleep');
     } else {
-      // play/play2 视为同一类，随机时不重复切换同类
-      const currentBase = (currentState === 'play' || currentState === 'play2') ? 'play' : currentState;
-      const actions = ['eat', 'sleep', 'play'];
+      // 变体视为同一类，随机时不重复切换同类
+      const currentBase = (currentState === 'play' || currentState === 'play2') ? 'play' : (currentState === 'daze' || currentState === 'daze2') ? 'daze' : currentState;
+      const actions = ['eat', 'sleep', 'play', 'daze'];
       const availableActions = actions.filter(a => a !== currentBase);
       const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
       setState(randomAction);
@@ -486,15 +607,47 @@ function scheduleNextAction() {
 // UI: Context Menu
 // ============================================================
 
+async function openSettingsWindow() {
+  try {
+    const windows = await getAllWindows();
+    const existing = windows.find(w => w.label === 'settings');
+    if (existing) {
+      await existing.show();
+      await existing.setFocus();
+      return;
+    }
+
+    const settingsWin = new WebviewWindow('settings', {
+      url: 'settings.html',
+      title: 'River Pet 高级设置',
+      width: 380,
+      height: 560,
+      resizable: false,
+      decorations: true,
+      center: true,
+      alwaysOnTop: true
+    });
+
+    settingsWin.once('tauri://created', () => {
+      console.log('✅ 设置窗口创建成功');
+    });
+    settingsWin.once('tauri://error', (e) => {
+      console.error('❌ 设置窗口创建失败:', e);
+    });
+  } catch (err) {
+    console.error('Failed to open settings window:', err);
+  }
+}
+
 function showContextMenu(x, y) {
   contextMenu.classList.remove('hidden');
 
-  const menuW = 160;
-  const menuH = 260;
+  const menuW = 186;
+  const menuH = 168; // 完美匹配双列高度，彻底告别底部截断
   let mx = x;
   let my = y;
   if (mx + menuW > CANVAS_SIZE) mx = CANVAS_SIZE - menuW;
-  if (my + menuH > CANVAS_SIZE) my = CANVAS_SIZE - menuH - 10;
+  if (my + menuH > CANVAS_SIZE) my = CANVAS_SIZE - menuH - 6;
   if (mx < 0) mx = 4;
   if (my < 0) my = 4;
 
@@ -513,13 +666,16 @@ document.querySelectorAll('.menu-item').forEach(item => {
 
     switch (action) {
       case 'eat':
-        setState('eat');
-        break;
       case 'sleep':
-        setState('sleep');
-        break;
       case 'play':
-        setState('play');
+      case 'daze':
+        setUserState(action);
+        break;
+      case 'switchPet':
+        switchNextPet();
+        break;
+      case 'settings':
+        openSettingsWindow();
         break;
       case 'pet':
         doPetting();
@@ -636,6 +792,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   } catch (e) {
     console.error('Init cursor error:', e);
+  }
+
+  // 监听来自托盘菜单的事件（Windows 任务栏 / macOS 菜单栏）
+  try {
+    await listen('tray://switch-pet', () => {
+      switchNextPet();
+    });
+    await listen('tray://open-settings', () => {
+      openSettingsWindow();
+    });
+  } catch (e) {
+    console.error('Tray listener error:', e);
   }
 
   setTimeout(() => {

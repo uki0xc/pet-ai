@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Desktop Pet",
+  "productName": "River Pet",
   "version": "0.1.0",
-  "identifier": "com.yuki.desktop-pet",
+  "identifier": "com.yuki.river-pet",
   "build": {
     "frontendDist": "../src"
   },
@@ -12,7 +12,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Desktop Pet",
+        "title": "River Pet",
         "width": 200,
         "height": 200,
         "x": 800,

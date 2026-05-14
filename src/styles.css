@@ -39,19 +39,26 @@ html, body {
 .context-menu {
   position: fixed;
   z-index: 1000;
-  min-width: 160px;
+  width: 186px;
   background: rgba(30, 30, 40, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  padding: 6px 0;
+  padding: 5px 0;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: menuSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0 3px;
 }
 
 @keyframes menuSlideIn {
@@ -66,7 +73,7 @@ html, body {
 }
 
 .menu-header {
-  padding: 8px 14px 6px;
+  padding: 5px 10px 4px;
   font-size: 11px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.45);
@@ -75,14 +82,22 @@ html, body {
 }
 
 .menu-item {
-  padding: 7px 14px;
-  font-size: 13px;
+  padding: 5px 6px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.88);
   cursor: pointer;
-  transition: background 0.12s ease;
+  border-radius: 6px;
+  transition: all 0.12s ease;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  margin: 1px 2px;
+  white-space: nowrap;
+}
+
+.menu-item-full {
+  margin: 1px 5px;
+  padding: 5px 8px;
 }
 
 .menu-item:hover {
@@ -96,7 +111,7 @@ html, body {
 
 .menu-divider {
   height: 1px;
-  margin: 4px 10px;
+  margin: 3px 8px;
   background: rgba(255, 255, 255, 0.08);
 }
 
